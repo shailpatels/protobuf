@@ -14,12 +14,27 @@ This README file contains protobuf installation instructions. To install
 protobuf, you need to install the protocol compiler (used to compile .proto
 files) and the protobuf runtime for your chosen programming language.
 
-Protobuf Compiler Installation
+### Fork changes
+
+This fork adds a `build.zig` file to compile `protoc` and its dependencies through the [zig](https://ziglang.org/) tool chain,
+see [Maintain it with zig](https://kristoff.it/blog/maintain-it-with-zig/) by Loris Cro for a great overview of the Zig toolchain
+used in C/C++ projects.
+
+Protocol Compiler Installation
 ------------------------------
 
-The protobuf compiler is written in C++. If you are using C++, please follow
-the [C++ Installation Instructions](src/README.md) to install protoc along
-with the C++ runtime.
+The protocol compiler is written in C++. If you are using C++, the following steps will build `protoc` and its dependencies
+
+*NOTE:* Using zig build for protobuf has only been tested on linux so far
+
+```
+git clone --recursive git@github.com:shailpatels/protobuf.git
+
+cd protobuf 
+
+# run 'zig targets' to see a list of available targets
+zig build -Dtarget=<YOUR_OS_TGT> 
+```
 
 For non-C++ users, the simplest way to install the protocol compiler is to
 download a pre-built binary from our [GitHub release page](https://github.com/protocolbuffers/protobuf/releases).
@@ -36,7 +51,6 @@ to use the github main version at HEAD, or you need to modify protobuf code,
 or you are using C++, it's recommended to build your own protoc binary from
 source.
 
-If you would like to build protoc binary from source, see the [C++ Installation Instructions](src/README.md).
 
 Protobuf Runtime Installation
 -----------------------------
