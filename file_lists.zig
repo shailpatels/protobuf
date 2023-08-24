@@ -252,12 +252,17 @@ pub const absl_log_srcs = .{
     "third_party/abseil-cpp/absl/log/internal/conditions.cc",
 };
 
+//https://github.com/abseil/abseil-cpp/blob/29bf8085f3bf17b84d30e34b3d7ff8248fda404e/absl/synchronization/BUILD.bazel
 pub const absl_synchronization_srcs = .{
     "third_party/abseil-cpp/absl/synchronization/barrier.cc",
     "third_party/abseil-cpp/absl/synchronization/blocking_counter.cc",
     "third_party/abseil-cpp/absl/synchronization/internal/create_thread_identity.cc",
+    "third_party/abseil-cpp/absl/synchronization/internal/futex_waiter.cc",
     "third_party/abseil-cpp/absl/synchronization/internal/per_thread_sem.cc",
-    "third_party/abseil-cpp/absl/synchronization/internal/waiter.cc",
+    "third_party/abseil-cpp/absl/synchronization/internal/sem_waiter.cc",
+    "third_party/abseil-cpp/absl/synchronization/internal/stdcpp_waiter.cc",
+    "third_party/abseil-cpp/absl/synchronization/internal/waiter_base.cc",
+    "third_party/abseil-cpp/absl/synchronization/internal/win32_waiter.cc",
     "third_party/abseil-cpp/absl/synchronization/notification.cc",
     "third_party/abseil-cpp/absl/synchronization/mutex.cc",
     "third_party/abseil-cpp/absl/synchronization/internal/graphcycles.cc",
@@ -322,9 +327,7 @@ pub const absl_debugging_srcs = .{
     "third_party/abseil-cpp/absl/debugging/internal/examine_stack.cc",
 };
 
-pub const absl_profiling_srcs = .{
-    "third_party/abseil-cpp/absl/profiling/internal/exponential_biased.cc"
-};
+pub const absl_profiling_srcs = .{"third_party/abseil-cpp/absl/profiling/internal/exponential_biased.cc"};
 
 pub const utf8_range_srcs = .{
     "third_party/utf8_range/naive.c",

@@ -24,7 +24,7 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
-    lib_abseil.addIncludePath("third_party/abseil-cpp");
+    lib_abseil.addIncludePath(.{ .path = "third_party/abseil-cpp" });
     lib_abseil.linkLibCpp();
 
     lib_abseil.addCSourceFiles(&cpp_files.absl_base_srcs, &(.{} ++ cpp_flags_all));
@@ -40,7 +40,6 @@ pub fn build(b: *std.Build) void {
     lib_abseil.addCSourceFiles(&cpp_files.absl_debugging_srcs, &(.{} ++ cpp_flags_all));
     lib_abseil.addCSourceFiles(&cpp_files.absl_profiling_srcs, &(.{} ++ cpp_flags_all));
 
-
     const lib_utf8_validity = b.addStaticLibrary(.{
         .name = "utf8_validity",
         .target = target,
@@ -48,9 +47,9 @@ pub fn build(b: *std.Build) void {
     });
 
     lib_utf8_validity.linkLibC();
-    lib_utf8_validity.addCSourceFiles(&.{ "third_party/utf8_range/utf8_validity.cc" }, &.{});
-    lib_utf8_validity.addIncludePath("third_party/utf8_range");
-    lib_utf8_validity.addIncludePath("third_party/abseil-cpp");
+    lib_utf8_validity.addCSourceFiles(&.{"third_party/utf8_range/utf8_validity.cc"}, &.{});
+    lib_utf8_validity.addIncludePath(.{ .path = "third_party/utf8_range" });
+    lib_utf8_validity.addIncludePath(.{ .path = "third_party/abseil-cpp" });
     lib_utf8_validity.linkLibrary(lib_abseil);
 
     const lib_proto = b.addStaticLibrary(.{
@@ -59,9 +58,9 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
-    lib_proto.addIncludePath("src");
-    lib_proto.addIncludePath("third_party/abseil-cpp");
-    lib_proto.addIncludePath("third_party/utf8_range");
+    lib_proto.addIncludePath(.{ .path = "src" });
+    lib_proto.addIncludePath(.{ .path = "third_party/abseil-cpp" });
+    lib_proto.addIncludePath(.{ .path = "third_party/utf8_range" });
     lib_proto.linkLibCpp();
     lib_proto.linkLibrary(lib_utf8_validity);
 
@@ -82,8 +81,8 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
-    lib_protoc.addIncludePath("third_party/abseil-cpp");
-    lib_protoc.addIncludePath("src");
+    lib_protoc.addIncludePath(.{ .path = "third_party/abseil-cpp" });
+    lib_protoc.addIncludePath(.{ .path = "src" });
     lib_protoc.addCSourceFiles(&cpp_files.libprotoc_srcs, &(.{} ++ cpp_flags_all));
     lib_protoc.linkLibCpp();
     lib_protoc.linkLibrary(lib_proto);
@@ -96,8 +95,8 @@ pub fn build(b: *std.Build) void {
 
     protoc.linkLibrary(lib_proto);
     protoc.linkLibrary(lib_protoc);
-    protoc.addIncludePath("src");
-    protoc.addIncludePath("third_party/abseil-cpp");
+    protoc.addIncludePath(.{ .path = "src" });
+    protoc.addIncludePath(.{ .path = "third_party/abseil-cpp" });
     protoc.addCSourceFiles(&.{
         "src/google/protobuf/compiler/main.cc",
     }, &(.{} ++ cpp_flags_all));
@@ -111,10 +110,10 @@ pub fn build(b: *std.Build) void {
     // Creates a step for unit testing. This only builds the test executable
     // but does not run it.
     //const main_tests = b.addTest(.{
-     //   .root_source_file = .{ .path = "src/main.zig" },
-      //  .target = target,
-       // .optimize = optimize,
-//    });
+    //   .root_source_file = .{ .path = "src/main.zig" },
+    //  .target = target,
+    // .optimize = optimize,
+    //    });
 
     //const run_main_tests = b.addRunArtifact(main_tests);
 
