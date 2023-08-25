@@ -105,6 +105,7 @@ pub fn build(b: *std.Build) void {
     // location when the user invokes the "install" step (the default step when
     // running `zig build`).
     b.installArtifact(lib_proto);
+    b.installArtifact(lib_protoc);
     b.installArtifact(protoc);
 
     // Creates a step for unit testing. This only builds the test executable

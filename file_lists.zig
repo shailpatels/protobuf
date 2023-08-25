@@ -1,5 +1,3 @@
-//TODO make sure all lists match branch lts_2023_01_25
-
 pub const libprotobuf_srcs = .{
     "src/google/protobuf/any.pb.cc",
     "src/google/protobuf/api.pb.cc",
@@ -19,6 +17,8 @@ pub const libprotobuf_srcs = .{
     "src/google/protobuf/arenaz_sampler.cc",
     "src/google/protobuf/compiler/importer.cc",
     "src/google/protobuf/compiler/parser.cc",
+    "src/google/protobuf/cpp_features.pb.cc",
+    "src/google/protobuf/feature_resolver.cc",
     "src/google/protobuf/descriptor.cc",
     "src/google/protobuf/descriptor.pb.cc",
     "src/google/protobuf/descriptor_database.cc",
@@ -63,6 +63,7 @@ pub const libprotobuf_srcs = .{
     "src/google/protobuf/reflection_ops.cc",
     "src/google/protobuf/repeated_field.cc",
     "src/google/protobuf/repeated_ptr_field.cc",
+    "src/google/protobuf/raw_ptr.cc",
     "src/google/protobuf/service.cc",
     "src/google/protobuf/stubs/common.cc",
     "src/google/protobuf/text_format.cc",
@@ -81,6 +82,7 @@ pub const libprotoc_srcs = .{
     "src/google/protobuf/compiler/allowlists/open_enum.cc",
     "src/google/protobuf/compiler/allowlists/unused_imports.cc",
     "src/google/protobuf/compiler/allowlists/weak_imports.cc",
+    "src/google/protobuf/compiler/allowlists/editions.cc",
     "src/google/protobuf/compiler/code_generator.cc",
     "src/google/protobuf/compiler/command_line_interface.cc",
     "src/google/protobuf/compiler/cpp/enum.cc",
@@ -176,10 +178,13 @@ pub const libprotoc_srcs = .{
     "src/google/protobuf/compiler/rust/accessors/accessors.cc",
     "src/google/protobuf/compiler/rust/accessors/singular_bytes.cc",
     "src/google/protobuf/compiler/rust/accessors/singular_scalar.cc",
+    "src/google/protobuf/compiler/rust/accessors/unsupported_field.cc",
+    "src/google/protobuf/compiler/rust/accessors/singular_message.cc",
     "src/google/protobuf/compiler/rust/context.cc",
     "src/google/protobuf/compiler/rust/generator.cc",
     "src/google/protobuf/compiler/rust/message.cc",
     "src/google/protobuf/compiler/rust/naming.cc",
+    "src/google/protobuf/compiler/rust/relative_path.cc",
     "src/google/protobuf/compiler/subprocess.cc",
     "src/google/protobuf/compiler/zip_writer.cc",
 };
@@ -266,6 +271,7 @@ pub const absl_synchronization_srcs = .{
     "third_party/abseil-cpp/absl/synchronization/notification.cc",
     "third_party/abseil-cpp/absl/synchronization/mutex.cc",
     "third_party/abseil-cpp/absl/synchronization/internal/graphcycles.cc",
+    "third_party/abseil-cpp/absl/synchronization/internal/kernel_timeout.cc",
 };
 
 pub const absl_time_srcs = .{
