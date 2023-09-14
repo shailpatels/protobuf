@@ -176,8 +176,8 @@ pub const libprotoc_srcs = .{
     "src/google/protobuf/compiler/retention.cc",
     "src/google/protobuf/compiler/ruby/ruby_generator.cc",
     "src/google/protobuf/compiler/rust/accessors/accessors.cc",
-    "src/google/protobuf/compiler/rust/accessors/singular_bytes.cc",
     "src/google/protobuf/compiler/rust/accessors/singular_scalar.cc",
+    "src/google/protobuf/compiler/rust/accessors/singular_string.cc",
     "src/google/protobuf/compiler/rust/accessors/unsupported_field.cc",
     "src/google/protobuf/compiler/rust/accessors/singular_message.cc",
     "src/google/protobuf/compiler/rust/context.cc",
@@ -185,6 +185,7 @@ pub const libprotoc_srcs = .{
     "src/google/protobuf/compiler/rust/message.cc",
     "src/google/protobuf/compiler/rust/naming.cc",
     "src/google/protobuf/compiler/rust/relative_path.cc",
+    "src/google/protobuf/compiler/rust/oneof.cc",
     "src/google/protobuf/compiler/subprocess.cc",
     "src/google/protobuf/compiler/zip_writer.cc",
 };

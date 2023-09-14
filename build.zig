@@ -1,12 +1,13 @@
 const std = @import("std");
 const cpp_files = @import("file_lists.zig");
 
-const cpp_flags_all = .{"-std=c++17"};
-
 // Although this function looks imperative, note that its job is to
 // declaratively construct a build graph that will be executed by an external
 // runner.
 pub fn build(b: *std.Build) void {
+    // option to apply to all compilation units
+    const cpp_flags_all = .{"-std=c++17"};
+
     // Standard target options allows the person running `zig build` to choose
     // what target to build for. Here we do not override the defaults, which
     // means any target is allowed, and the default is native. Other options
@@ -107,6 +108,16 @@ pub fn build(b: *std.Build) void {
     b.installArtifact(lib_proto);
     b.installArtifact(lib_protoc);
     b.installArtifact(protoc);
+    b.installDirectory(.{
+        .source_dir = .{ .path = "src/google/protobuf" },
+        .install_dir = .header,
+        .install_subdir = "google/protobuf",
+        .exclude_extensions = &.{
+            "cc",
+            "proto",
+            "bazel",
+        },
+    });
 
     // Creates a step for unit testing. This only builds the test executable
     // but does not run it.
