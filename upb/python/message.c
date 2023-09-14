@@ -28,18 +28,18 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include "python/message.h"
+#include "upb/python/message.h"
 
-#include "python/convert.h"
-#include "python/descriptor.h"
-#include "python/extension_dict.h"
-#include "python/map.h"
-#include "python/repeated.h"
-#include "upb/message/copy.h"
-#include "upb/reflection/def.h"
-#include "upb/reflection/message.h"
-#include "upb/text/encode.h"
-#include "upb/util/required_fields.h"
+#include "upb/python/convert.h"
+#include "upb/python/descriptor.h"
+#include "upb/python/extension_dict.h"
+#include "upb/python/map.h"
+#include "upb/python/repeated.h"
+#include "upb/upb/message/copy.h"
+#include "upb/upb/reflection/def.h"
+#include "upb/upb/reflection/message.h"
+#include "upb/upb/text/encode.h"
+#include "upb/upb/util/required_fields.h"
 
 static const upb_MessageDef* PyUpb_MessageMeta_GetMsgdef(PyObject* cls);
 static PyObject* PyUpb_MessageMeta_GetAttr(PyObject* self, PyObject* name);
@@ -63,6 +63,8 @@ typedef struct {
   getattrofunc type_getattro;  // PyTypeObject.tp_getattro
   setattrofunc type_setattro;  // PyTypeObject.tp_setattro
   size_t type_basicsize;       // sizeof(PyHeapTypeObject)
+  traverseproc type_traverse;  // PyTypeObject.tp_traverse
+  inquiry type_clear;          // PyTypeObject.tp_clear
 
   // While we can refer to PY_VERSION_HEX in the limited API, this will give us
   // the version of Python we were compiled against, which may be different
@@ -135,6 +137,8 @@ static bool PyUpb_CPythonBits_Init(PyUpb_CPythonBits* bits) {
   bits->type_dealloc = upb_Pre310_PyType_GetDeallocSlot(type);
   bits->type_getattro = PyType_GetSlot(type, Py_tp_getattro);
   bits->type_setattro = PyType_GetSlot(type, Py_tp_setattro);
+  bits->type_traverse = PyType_GetSlot(type, Py_tp_traverse);
+  bits->type_clear = PyType_GetSlot(type, Py_tp_clear);
 
   size = PyObject_GetAttrString((PyObject*)&PyType_Type, "__basicsize__");
   if (!size) goto err;
@@ -145,6 +149,8 @@ static bool PyUpb_CPythonBits_Init(PyUpb_CPythonBits* bits) {
   assert(bits->type_dealloc);
   assert(bits->type_getattro);
   assert(bits->type_setattro);
+  assert(bits->type_traverse);
+  assert(bits->type_clear);
 
 #ifndef Py_LIMITED_API
   assert(bits->type_new == PyType_Type.tp_new);
@@ -152,6 +158,8 @@ static bool PyUpb_CPythonBits_Init(PyUpb_CPythonBits* bits) {
   assert(bits->type_getattro == PyType_Type.tp_getattro);
   assert(bits->type_setattro == PyType_Type.tp_setattro);
   assert(bits->type_basicsize == sizeof(PyHeapTypeObject));
+  assert(bits->type_traverse == PyType_Type.tp_traverse);
+  assert(bits->type_clear == PyType_Type.tp_clear);
 #endif
 
   sys = PyImport_ImportModule("sys");
@@ -1208,7 +1216,7 @@ static PyObject* PyUpb_Message_MergeInternal(PyObject* self, PyObject* arg,
   if (!serialized) return NULL;
   PyObject* ret = PyUpb_Message_MergeFromString(self, serialized);
   Py_DECREF(serialized);
-  Py_DECREF(ret);
+  Py_XDECREF(ret);
   Py_RETURN_NONE;
 }
 
@@ -1239,9 +1247,10 @@ static PyObject* PyUpb_Message_CopyFrom(PyObject* _self, PyObject* arg) {
 
   const upb_Message* other_msg = PyUpb_Message_GetIfReified((PyObject*)other);
   if (other_msg) {
-    upb_Message_DeepCopy(self->ptr.msg, other_msg,
-                         upb_MessageDef_MiniTable(other->def),
-                         PyUpb_Arena_Get(self->arena));
+    upb_Message_DeepCopy(
+        self->ptr.msg, other_msg,
+        upb_MessageDef_MiniTable((const upb_MessageDef*)other->def),
+        PyUpb_Arena_Get(self->arena));
   } else {
     PyObject* tmp = PyUpb_Message_Clear(self);
     Py_DECREF(tmp);
@@ -1288,9 +1297,8 @@ PyObject* PyUpb_Message_MergeFromString(PyObject* _self, PyObject* arg) {
   const upb_MiniTable* layout = upb_MessageDef_MiniTable(msgdef);
   upb_Arena* arena = PyUpb_Arena_Get(self->arena);
   PyUpb_ModuleState* state = PyUpb_ModuleState_Get();
-  int options = upb_DecodeOptions_MaxDepth(
-      state->allow_oversize_protos ? UINT16_MAX
-                                   : kUpb_WireFormat_DefaultDepthLimit);
+  int options =
+      upb_DecodeOptions_MaxDepth(state->allow_oversize_protos ? UINT16_MAX : 0);
   upb_DecodeStatus status =
       upb_Decode(buf, size, self->ptr.msg, layout, extreg, options, arena);
   Py_XDECREF(bytes);
@@ -1309,9 +1317,9 @@ static PyObject* PyUpb_Message_ParseFromString(PyObject* self, PyObject* arg) {
 }
 
 static PyObject* PyUpb_Message_ByteSize(PyObject* self, PyObject* args) {
-  // TODO(https://github.com/protocolbuffers/upb/issues/462): At the moment upb
-  // does not have a "byte size" function, so we just serialize to string and
-  // get the size of the string.
+  // TODO(https://github.com/protocolbuffers/protobuf/issues/13759): At the
+  // moment upb does not have a "byte size" function, so we just serialize to
+  // string and get the size of the string.
   PyObject* subargs = PyTuple_New(0);
   PyObject* serialized = PyUpb_Message_SerializeToString(self, subargs, NULL);
   Py_DECREF(subargs);
@@ -1431,9 +1439,10 @@ static PyObject* PyUpb_Message_FindInitializationErrors(PyObject* _self,
   upb_Message* msg = PyUpb_Message_GetIfReified(_self);
   const upb_MessageDef* msgdef = _PyUpb_Message_GetMsgdef(self);
   const upb_DefPool* ext_pool = upb_FileDef_Pool(upb_MessageDef_File(msgdef));
-  upb_FieldPathEntry* fields;
+  upb_FieldPathEntry* fields_base;
   PyObject* ret = PyList_New(0);
-  if (upb_util_HasUnsetRequired(msg, msgdef, ext_pool, &fields)) {
+  if (upb_util_HasUnsetRequired(msg, msgdef, ext_pool, &fields_base)) {
+    upb_FieldPathEntry* fields = fields_base;
     char* buf = NULL;
     size_t size = 0;
     assert(fields->field);
@@ -1453,6 +1462,7 @@ static PyObject* PyUpb_Message_FindInitializationErrors(PyObject* _self,
       Py_DECREF(str);
     }
     free(buf);
+    free(fields_base);
   }
   return ret;
 }
@@ -1612,12 +1622,12 @@ static PyObject* PyUpb_Message_WhichOneof(PyObject* _self, PyObject* name) {
 
 PyObject* DeepCopy(PyObject* _self, PyObject* arg) {
   PyUpb_Message* self = (void*)_self;
+  const upb_MessageDef* def = PyUpb_Message_GetMsgdef(_self);
 
   PyObject* arena = PyUpb_Arena_New();
-  upb_Message* clone =
-      upb_Message_DeepClone(self->ptr.msg, upb_MessageDef_MiniTable(self->def),
-                            PyUpb_Arena_Get(arena));
-  PyObject* ret = PyUpb_Message_Get(clone, self->def, arena);
+  upb_Message* clone = upb_Message_DeepClone(
+      self->ptr.msg, upb_MessageDef_MiniTable(def), PyUpb_Arena_Get(arena));
+  PyObject* ret = PyUpb_Message_Get(clone, def, arena);
   Py_DECREF(arena);
 
   return ret;
@@ -1654,7 +1664,7 @@ static PyGetSetDef PyUpb_Message_Getters[] = {
 static PyMethodDef PyUpb_Message_Methods[] = {
     {"__deepcopy__", (PyCFunction)DeepCopy, METH_VARARGS,
      "Makes a deep copy of the class."},
-    // TODO(https://github.com/protocolbuffers/upb/issues/459)
+    // TODO(https://github.com/protocolbuffers/protobuf/issues/13760)
     //{ "__unicode__", (PyCFunction)ToUnicode, METH_NOARGS,
     //  "Outputs a unicode representation of the message." },
     {"ByteSize", (PyCFunction)PyUpb_Message_ByteSize, METH_NOARGS,
@@ -1806,6 +1816,7 @@ PyObject* PyUpb_MessageMeta_DoCreateClass(PyObject* py_descriptor,
   meta->py_message_descriptor = py_descriptor;
   meta->layout = upb_MessageDef_MiniTable(msgdef);
   Py_INCREF(meta->py_message_descriptor);
+  PyUpb_Descriptor_SetClass(py_descriptor, ret);
 
   PyUpb_ObjCache_Add(meta->layout, ret);
 
@@ -1942,10 +1953,23 @@ static PyObject* PyUpb_MessageMeta_GetAttr(PyObject* self, PyObject* name) {
   return NULL;
 }
 
+static int PyUpb_MessageMeta_Traverse(PyObject* self, visitproc visit,
+                                      void* arg) {
+  PyUpb_MessageMeta* meta = PyUpb_GetMessageMeta(self);
+  Py_VISIT(meta->py_message_descriptor);
+  return cpython_bits.type_traverse(self, visit, arg);
+}
+
+static int PyUpb_MessageMeta_Clear(PyObject* self, visitproc visit, void* arg) {
+  return cpython_bits.type_clear(self);
+}
+
 static PyType_Slot PyUpb_MessageMeta_Slots[] = {
     {Py_tp_new, PyUpb_MessageMeta_New},
     {Py_tp_dealloc, PyUpb_MessageMeta_Dealloc},
     {Py_tp_getattro, PyUpb_MessageMeta_GetAttr},
+    {Py_tp_traverse, PyUpb_MessageMeta_Traverse},
+    {Py_tp_clear, PyUpb_MessageMeta_Clear},
     {0, NULL}};
 
 static PyType_Spec PyUpb_MessageMeta_Spec = {
@@ -1954,7 +1978,7 @@ static PyType_Spec PyUpb_MessageMeta_Spec = {
     0,  // tp_itemsize
     // TODO(haberman): remove BASETYPE, Python should just use MessageMeta
     // directly instead of subclassing it.
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,  // tp_flags
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,  // tp_flags
     PyUpb_MessageMeta_Slots,
 };
 

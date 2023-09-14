@@ -28,7 +28,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include "protos_generator/gen_messages.h"
+#include "upb/protos_generator/gen_messages.h"
 
 #include <string>
 #include <vector>
@@ -36,14 +36,14 @@
 #include "google/protobuf/descriptor.pb.h"
 #include "absl/strings/str_cat.h"
 #include "google/protobuf/descriptor.h"
-#include "protos_generator/gen_accessors.h"
-#include "protos_generator/gen_enums.h"
-#include "protos_generator/gen_extensions.h"
-#include "protos_generator/gen_utils.h"
-#include "protos_generator/names.h"
-#include "protos_generator/output.h"
-#include "upbc/common.h"
-#include "upbc/file_layout.h"
+#include "upb/protos_generator/gen_accessors.h"
+#include "upb/protos_generator/gen_enums.h"
+#include "upb/protos_generator/gen_extensions.h"
+#include "upb/protos_generator/gen_utils.h"
+#include "upb/protos_generator/names.h"
+#include "upb/protos_generator/output.h"
+#include "upb/upbc/common.h"
+#include "upb/upbc/file_layout.h"
 
 namespace protos_generator {
 
@@ -283,9 +283,6 @@ void WriteModelProxyDeclaration(const protobuf::Descriptor* descriptor,
             ::protos::Ptr<$0Proxy> message);
         friend upb_Arena* ::protos::internal::GetArena<$2>($2* message);
         friend upb_Arena* ::protos::internal::GetArena<$2>(::protos::Ptr<$2> message);
-        friend $0Proxy(::protos::CloneMessage(::protos::Ptr<$2> message,
-                                              ::upb::Arena& arena));
-
         static void Rebind($0Proxy& lhs, const $0Proxy& rhs) {
           lhs.msg_ = rhs.msg_;
           lhs.arena_ = rhs.arena_;
@@ -312,7 +309,7 @@ void WriteModelCProxyDeclaration(const protobuf::Descriptor* descriptor,
       )cc",
       ClassName(descriptor), MessageName(descriptor));
 
-  WriteUsingAccessorsInHeader(descriptor, MessageClassType::kMessageProxy,
+  WriteUsingAccessorsInHeader(descriptor, MessageClassType::kMessageCProxy,
                               output);
 
   output.Indent(1);
@@ -322,9 +319,8 @@ void WriteModelCProxyDeclaration(const protobuf::Descriptor* descriptor,
         using AsNonConst = $0Proxy;
         const void* msg() const { return msg_; }
 
-        $0CProxy(void* msg, upb_Arena* arena) : internal::$0Access(($1*)msg, arena){};
-        friend $0::CProxy(::protos::internal::CreateMessage<$0>(
-            upb_Message* msg, upb_Arena* arena));
+        $0CProxy(const void* msg, upb_Arena* arena)
+            : internal::$0Access(($1*)msg, arena){};
         friend struct ::protos::internal::PrivateAccess;
         friend class RepeatedFieldProxy;
         friend class ::protos::Ptr<$0>;
@@ -366,11 +362,11 @@ void WriteMessageImplementation(
           }
           $0::$0(const $0& from) : $0Access() {
             arena_ = owned_arena_.ptr();
-            msg_ = ($1*)upb_Message_DeepClone(from.msg_, &$2, arena_);
+            msg_ = ($1*)::protos::internal::DeepClone(from.msg_, &$2, arena_);
           }
           $0::$0(const CProxy& from) : $0Access() {
             arena_ = owned_arena_.ptr();
-            msg_ = ($1*)upb_Message_DeepClone(
+            msg_ = ($1*)::protos::internal::DeepClone(
                 ::protos::internal::GetInternalMsg(&from), &$2, arena_);
           }
           $0::$0(const Proxy& from) : $0(static_cast<const CProxy&>(from)) {}
@@ -380,12 +376,12 @@ void WriteMessageImplementation(
           }
           $0& $0::operator=(const $3& from) {
             arena_ = owned_arena_.ptr();
-            msg_ = ($1*)upb_Message_DeepClone(from.msg_, &$2, arena_);
+            msg_ = ($1*)::protos::internal::DeepClone(from.msg_, &$2, arena_);
             return *this;
           }
           $0& $0::operator=(const CProxy& from) {
             arena_ = owned_arena_.ptr();
-            msg_ = ($1*)upb_Message_DeepClone(
+            msg_ = ($1*)::protos::internal::DeepClone(
                 ::protos::internal::GetInternalMsg(&from), &$2, arena_);
             return *this;
           }

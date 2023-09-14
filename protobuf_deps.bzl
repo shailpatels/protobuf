@@ -142,14 +142,14 @@ def protobuf_deps():
     if not native.existing_rule("io_bazel_rules_kotlin"):
         http_archive(
             name = "io_bazel_rules_kotlin",
-            urls = ["https://github.com/bazelbuild/rules_kotlin/releases/download/v1.7.0-RC-1/rules_kotlin_release.tgz"],
-            sha256 = "68b910730026921814d3a504ccbe9adaac9938983d940e626523e6e4ecfb0355",
+            urls = ["https://github.com/bazelbuild/rules_kotlin/releases/download/v1.8.1/rules_kotlin_release.tgz"],
+            sha256 = "a630cda9fdb4f56cf2dc20a4bf873765c41cf00e9379e8d59cd07b24730f4fde",
         )
 
     if not native.existing_rule("upb"):
-        _github_archive(
+        http_archive(
             name = "upb",
-            repo = "https://github.com/protocolbuffers/upb",
-            commit = "57636ce03ac1e2aab3a362a61a6664981e21cda5",
-            sha256 = "75da534db927e165cb550d232c35e2dec4b5153b3b47989b250d75febbfc1710",
+            url = "https://github.com/protocolbuffers/protobuf/archive/7242c3619c6db9843614b2c865681bf397261be8.zip",
+            strip_prefix = "protobuf-7242c3619c6db9843614b2c865681bf397261be8/upb",
+            sha256 = "0fc581f5e5caaf30c7119a73f2cff5d45424e4a4f23a52ebba73e3df031ad1c6",
         )

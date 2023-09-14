@@ -1,32 +1,9 @@
 // Protocol Buffers - Google's data interchange format
 // Copyright 2008 Google Inc.  All rights reserved.
-// https://developers.google.com/protocol-buffers/
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//     * Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//     * Redistributions in binary form must reproduce the above
-// copyright notice, this list of conditions and the following disclaimer
-// in the documentation and/or other materials provided with the
-// distribution.
-//     * Neither the name of Google Inc. nor the names of its
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file or at
+// https://developers.google.com/open-source/licenses/bsd
 
 // Author: kenton@google.com (Kenton Varda)
 //  Based on original Protocol Buffers design by
@@ -366,17 +343,6 @@ class PROTOBUF_EXPORT Message : public MessageLite {
   uint8_t* _InternalSerialize(uint8_t* target,
                               io::EpsCopyOutputStream* stream) const override;
 
- private:
-  // This is called only by the default implementation of ByteSize(), to
-  // update the cached size.  If you override ByteSize(), you do not need
-  // to override this.  If you do not override ByteSize(), you MUST override
-  // this; the default implementation will crash.
-  //
-  // The method is private because subclasses should never call it; only
-  // override it.  Yes, C++ lets you do that.  Crazy, huh?
-  virtual void SetCachedSize(int size) const;
-
- public:
   // Introspection ---------------------------------------------------
 
 
@@ -396,35 +362,12 @@ class PROTOBUF_EXPORT Message : public MessageLite {
   // to implement GetDescriptor() and GetReflection() above.
   virtual Metadata GetMetadata() const = 0;
 
-  struct ClassData {
-    // Note: The order of arguments (to, then from) is chosen so that the ABI
-    // of this function is the same as the CopyFrom method.  That is, the
-    // hidden "this" parameter comes first.
-    void (*copy_to_from)(Message& to, const Message& from_msg);
-    void (*merge_to_from)(Message& to, const Message& from_msg);
-  };
-  // GetClassData() returns a pointer to a ClassData struct which
-  // exists in global memory and is unique to each subclass.  This uniqueness
-  // property is used in order to quickly determine whether two messages are
-  // of the same type.
-  // TODO(jorg): change to pure virtual
-  virtual const ClassData* GetClassData() const { return nullptr; }
-
-  // CopyWithSourceCheck calls Clear() and then MergeFrom(), and in debug
-  // builds, checks that calling Clear() on the destination message doesn't
-  // alter the source.  It assumes the messages are known to be of the same
-  // type, and thus uses GetClassData().
-  static void CopyWithSourceCheck(Message& to, const Message& from);
-
   inline explicit Message(Arena* arena) : MessageLite(arena) {}
   size_t ComputeUnknownFieldsSize(size_t total_size,
                                   internal::CachedSize* cached_size) const;
   size_t MaybeComputeUnknownFieldsSize(size_t total_size,
                                        internal::CachedSize* cached_size) const;
 
-
- protected:
-  static uint64_t GetInvariantPerBuild(uint64_t salt);
 };
 
 namespace internal {

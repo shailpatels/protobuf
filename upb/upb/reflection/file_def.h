@@ -28,15 +28,15 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// IWYU pragma: private, include "upb/reflection/def.h"
+// IWYU pragma: private, include "upb/upb/reflection/def.h"
 
 #ifndef UPB_REFLECTION_FILE_DEF_H_
 #define UPB_REFLECTION_FILE_DEF_H_
 
-#include "upb/reflection/common.h"
+#include "upb/upb/reflection/common.h"
 
 // Must be last.
-#include "upb/port/def.inc"
+#include "upb/upb/port/def.inc"
 
 #ifdef __cplusplus
 extern "C" {
@@ -48,7 +48,7 @@ bool upb_FileDef_HasOptions(const upb_FileDef* f);
 UPB_API const char* upb_FileDef_Name(const upb_FileDef* f);
 const UPB_DESC(FileOptions) * upb_FileDef_Options(const upb_FileDef* f);
 const char* upb_FileDef_Package(const upb_FileDef* f);
-const char* upb_FileDef_Edition(const upb_FileDef* f);
+UPB_DESC(Edition) upb_FileDef_Edition(const upb_FileDef* f);
 UPB_API const upb_DefPool* upb_FileDef_Pool(const upb_FileDef* f);
 
 const upb_FileDef* upb_FileDef_PublicDependency(const upb_FileDef* f, int i);
@@ -75,6 +75,6 @@ int upb_FileDef_WeakDependencyCount(const upb_FileDef* f);
 } /* extern "C" */
 #endif
 
-#include "upb/port/undef.inc"
+#include "upb/upb/port/undef.inc"
 
 #endif /* UPB_REFLECTION_FILE_DEF_H_ */

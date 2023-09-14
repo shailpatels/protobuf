@@ -1,41 +1,20 @@
 // Protocol Buffers - Google's data interchange format
 // Copyright 2023 Google LLC.  All rights reserved.
-// https://developers.google.com/protocol-buffers/
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//     * Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//     * Redistributions in binary form must reproduce the above
-// copyright notice, this list of conditions and the following disclaimer
-// in the documentation and/or other materials provided with the
-// distribution.
-//     * Neither the name of Google LLC. nor the names of its
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file or at
+// https://developers.google.com/open-source/licenses/bsd
 
 #include "google/protobuf/compiler/rust/naming.h"
 
 #include <string>
 
 #include "absl/log/absl_log.h"
+#include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_replace.h"
 #include "absl/strings/string_view.h"
+#include "absl/strings/strip.h"
 #include "absl/strings/substitute.h"
 #include "google/protobuf/compiler/code_generator.h"
 #include "google/protobuf/compiler/rust/context.h"
@@ -148,7 +127,9 @@ std::string PrimitiveRsTypeName(const FieldDescriptor& desc) {
     case FieldDescriptor::TYPE_DOUBLE:
       return "f64";
     case FieldDescriptor::TYPE_BYTES:
-      return "&[u8]";
+      return "[u8]";
+    case FieldDescriptor::TYPE_STRING:
+      return "::__pb::ProtoStr";
     default:
       break;
   }
@@ -169,10 +150,19 @@ std::string RustInternalModuleName(Context<FileDescriptor> file) {
 }
 
 std::string GetCrateRelativeQualifiedPath(Context<Descriptor> msg) {
+  std::string name = msg.desc().full_name();
   if (msg.desc().file()->package().empty()) {
-    return msg.desc().name();
+    return name;
   }
-  return absl::StrCat(RustModule(msg), "::", msg.desc().name());
+  // when computing the relative path, we don't want the package name, so we
+  // strip that out
+  name =
+      std::string(absl::StripPrefix(name, msg.desc().file()->package() + "."));
+  // proto nesting is marked with periods in .proto files -- this gets
+  // translated to delimiting via _:: in terra rust
+  absl::StrReplaceAll({{".", "_::"}}, &name);
+
+  return absl::StrCat(RustModule(msg), "::", name);
 }
 
 std::string FieldInfoComment(Context<FieldDescriptor> field) {

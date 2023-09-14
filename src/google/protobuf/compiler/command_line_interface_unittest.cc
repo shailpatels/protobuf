@@ -1,32 +1,9 @@
 // Protocol Buffers - Google's data interchange format
 // Copyright 2008 Google Inc.  All rights reserved.
-// https://developers.google.com/protocol-buffers/
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//     * Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//     * Redistributions in binary form must reproduce the above
-// copyright notice, this list of conditions and the following disclaimer
-// in the documentation and/or other materials provided with the
-// distribution.
-//     * Neither the name of Google Inc. nor the names of its
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file or at
+// https://developers.google.com/open-source/licenses/bsd
 
 // Author: kenton@google.com (Kenton Varda)
 //  Based on original Protocol Buffers design by
@@ -44,6 +21,7 @@
 #include "absl/strings/str_format.h"
 #include "google/protobuf/compiler/command_line_interface_tester.h"
 #include "google/protobuf/unittest_features.pb.h"
+#include "google/protobuf/unittest_invalid_features.pb.h"
 
 #ifndef _MSC_VER
 #include <unistd.h>
@@ -205,6 +183,8 @@ class CommandLineInterfaceTest : public CommandLineInterfaceTester {
   void WriteDescriptorSet(absl::string_view filename,
                           const FileDescriptorSet* descriptor_set);
 
+  FeatureSetDefaults ReadEditionDefaults(absl::string_view filename);
+
   // The default code generators support all features. Use this to create a
   // code generator that omits the given feature(s).
   void CreateGeneratorWithMissingFeatures(const std::string& name,
@@ -214,6 +194,16 @@ class CommandLineInterfaceTest : public CommandLineInterfaceTester {
     generator->SuppressFeatures(features);
     RegisterGenerator(name, std::move(generator), description);
   }
+
+  void SetMockGeneratorTestCase(absl::string_view name) {
+#ifdef _WIN32
+    ::_putenv(absl::StrCat("TEST_CASE", "=", name).c_str());
+#else
+    ::setenv("TEST_CASE", name.data(), 1);
+#endif
+  }
+
+  MockCodeGenerator* mock_generator_ = nullptr;
 
  private:
   // Was DisallowPlugins() called?
@@ -242,9 +232,13 @@ class CommandLineInterfaceTest::NullCodeGenerator : public CodeGenerator {
 // ===================================================================
 
 CommandLineInterfaceTest::CommandLineInterfaceTest() {
+  // Reset the mock generator's test case environment variable.
+  SetMockGeneratorTestCase("");
+
   // Register generators.
-  RegisterGenerator("--test_out", "--test_opt",
-                    std::make_unique<MockCodeGenerator>("test_generator"),
+  auto mock_generator = std::make_unique<MockCodeGenerator>("test_generator");
+  mock_generator_ = mock_generator.get();
+  RegisterGenerator("--test_out", "--test_opt", std::move(mock_generator),
                     "Test output.");
   RegisterGenerator("-t", std::make_unique<MockCodeGenerator>("test_generator"),
                     "Test output.");
@@ -340,6 +334,15 @@ void CommandLineInterfaceTest::ReadDescriptorSet(
   if (!descriptor_set->ParseFromString(file_contents)) {
     FAIL() << "Could not parse file contents: " << filename;
   }
+}
+
+FeatureSetDefaults CommandLineInterfaceTest::ReadEditionDefaults(
+    absl::string_view filename) {
+  FeatureSetDefaults defaults;
+  std::string file_contents = ReadFile(filename);
+  ABSL_CHECK(defaults.ParseFromString(file_contents))
+      << "Could not parse file contents: " << filename;
+  return defaults;
 }
 
 void CommandLineInterfaceTest::WriteDescriptorSet(
@@ -1457,36 +1460,105 @@ TEST_F(CommandLineInterfaceTest, FeatureExtensionError) {
   CreateTempFile("google/protobuf/descriptor.proto",
                  google::protobuf::DescriptorProto::descriptor()->file()->DebugString());
   CreateTempFile("features.proto",
-                 R"schema(
-    syntax = "proto2";
-    package pb;
-    import "google/protobuf/descriptor.proto";
-    extend google.protobuf.FeatureSet {
-      optional TestFeatures test = 9999;
-    }
-    message TestFeatures {
-      repeated int32 repeated_feature = 1 [
-        retention = RETENTION_RUNTIME,
-        targets = TARGET_TYPE_FIELD,
-        edition_defaults = { edition: "2023", value: "3" }
-      ];
-    })schema");
+                 pb::TestInvalidFeatures::descriptor()->file()->DebugString());
   CreateTempFile("foo.proto",
                  R"schema(
     edition = "2023";
     import "features.proto";
     message Foo {
       int32 bar = 1;
-      int32 baz = 2 [features.(pb.test).repeated_feature = 5];
+      int32 baz = 2 [features.(pb.test_invalid).repeated_feature = 5];
     })schema");
+
+  mock_generator_->set_feature_extensions(
+      {GetExtensionReflection(pb::test_invalid)});
 
   Run("protocol_compiler --proto_path=$tmpdir --test_out=$tmpdir "
       "--experimental_editions foo.proto");
-  // TODO(b/296638633) Flip this once generators can specify their feature sets.
+  ExpectErrorSubstring(
+      "Feature field pb.TestInvalidFeatures.repeated_feature is an unsupported "
+      "repeated field");
+}
+
+TEST_F(CommandLineInterfaceTest, InvalidMinimumEditionError) {
+  CreateTempFile("foo.proto", R"schema(edition = "2023";)schema");
+
+  mock_generator_->set_minimum_edition(EDITION_1_TEST_ONLY);
+
+  Run("protocol_compiler --proto_path=$tmpdir --test_out=$tmpdir "
+      "--experimental_editions foo.proto");
+  ExpectErrorSubstring(
+      "generator --test_out specifies a minimum edition 1_TEST_ONLY which is "
+      "not the protoc minimum 2023");
+}
+
+TEST_F(CommandLineInterfaceTest, InvalidMaximumEditionError) {
+  CreateTempFile("foo.proto", R"schema(edition = "2023";)schema");
+
+  mock_generator_->set_maximum_edition(EDITION_99999_TEST_ONLY);
+
+  Run("protocol_compiler --proto_path=$tmpdir --test_out=$tmpdir "
+      "--experimental_editions foo.proto");
+  ExpectErrorSubstring(
+      "generator --test_out specifies a maximum edition 99999_TEST_ONLY which "
+      "is not the protoc maximum 2023");
+}
+
+TEST_F(CommandLineInterfaceTest, InvalidFeatureExtensionError) {
+  CreateTempFile("foo.proto", R"schema(edition = "2023";)schema");
+
+  mock_generator_->set_feature_extensions({nullptr});
+
+  Run("protocol_compiler --proto_path=$tmpdir --test_out=$tmpdir "
+      "--experimental_editions foo.proto");
+  ExpectErrorSubstring(
+      "generator --test_out specifies an unknown feature extension");
+}
+
+TEST_F(CommandLineInterfaceTest, Plugin_InvalidFeatureExtensionError) {
+  CreateTempFile("foo.proto", R"schema(
+    edition = "2023";
+    message Foo {
+      int32 i = 1;
+    }
+  )schema");
+
+  SetMockGeneratorTestCase("invalid_features");
+  Run("protocol_compiler --experimental_editions "
+      "--proto_path=$tmpdir foo.proto --plug_out=$tmpdir");
+
+  ExpectErrorSubstring(
+      "error generating feature defaults: Unknown extension of "
+      "google.protobuf.FeatureSet");
+}
+
+TEST_F(CommandLineInterfaceTest, Plugin_MissingFeatureExtensionError) {
+  CreateTempFile("foo.proto", R"schema(
+    edition = "2023";
+    message Foo {
+      int32 i = 1;
+    }
+  )schema");
+
+  SetMockGeneratorTestCase("no_feature_defaults");
+  Run("protocol_compiler --experimental_editions "
+      "--proto_path=$tmpdir foo.proto --plug_out=$tmpdir");
+
+  ExpectErrorSubstring("Test features were not resolved properly");
+}
+
+TEST_F(CommandLineInterfaceTest, Plugin_TestFeatures) {
+  CreateTempFile("foo.proto", R"schema(
+    edition = "2023";
+    message Foo {
+      int32 i = 1;
+    }
+  )schema");
+
+  Run("protocol_compiler --experimental_editions "
+      "--proto_path=$tmpdir foo.proto --plug_out=$tmpdir");
+
   ExpectNoErrors();
-  // ExpectErrorSubstring(
-  //     "Feature field pb.TestFeatures.repeated_feature is an unsupported "
-  //     "repeated field");
 }
 
 TEST_F(CommandLineInterfaceTest, Plugin_LegacyFeatures) {
@@ -1657,11 +1729,239 @@ TEST_F(CommandLineInterfaceTest, PluginNoEditionsSupport) {
     }
   )schema");
 
+  SetMockGeneratorTestCase("no_editions");
   Run("protocol_compiler --experimental_editions "
-      "--proto_path=$tmpdir foo.proto --plug_out=no_editions:$tmpdir");
+      "--proto_path=$tmpdir foo.proto --plug_out=$tmpdir");
 
   ExpectErrorSubstring(
       "code generator prefix-gen-plug hasn't been updated to support editions");
+}
+
+TEST_F(CommandLineInterfaceTest, EditionDefaults) {
+  CreateTempFile("google/protobuf/descriptor.proto",
+                 google::protobuf::DescriptorProto::descriptor()->file()->DebugString());
+  Run("protocol_compiler --proto_path=$tmpdir "
+      "--experimental_edition_defaults_out=$tmpdir/defaults "
+      "google/protobuf/descriptor.proto");
+  ExpectNoErrors();
+
+  FeatureSetDefaults defaults = ReadEditionDefaults("defaults");
+  EXPECT_THAT(defaults, EqualsProto(R"pb(
+                defaults {
+                  edition_enum: EDITION_2023
+                  features {
+                    field_presence: EXPLICIT
+                    enum_type: OPEN
+                    repeated_field_encoding: PACKED
+                    message_encoding: LENGTH_PREFIXED
+                    json_format: ALLOW
+                  }
+                }
+                minimum_edition_enum: EDITION_2023
+                maximum_edition_enum: EDITION_2023
+              )pb"));
+}
+
+TEST_F(CommandLineInterfaceTest, EditionDefaultsWithMaximum) {
+  CreateTempFile("google/protobuf/descriptor.proto",
+                 google::protobuf::DescriptorProto::descriptor()->file()->DebugString());
+  Run("protocol_compiler --proto_path=$tmpdir "
+      "--experimental_edition_defaults_out=$tmpdir/defaults "
+      "--experimental_edition_defaults_maximum=99997_TEST_ONLY "
+      "google/protobuf/descriptor.proto");
+  ExpectNoErrors();
+
+  FeatureSetDefaults defaults = ReadEditionDefaults("defaults");
+  EXPECT_THAT(defaults, EqualsProto(R"pb(
+                defaults {
+                  edition_enum: EDITION_2023
+                  features {
+                    field_presence: EXPLICIT
+                    enum_type: OPEN
+                    repeated_field_encoding: PACKED
+                    message_encoding: LENGTH_PREFIXED
+                    json_format: ALLOW
+                  }
+                }
+                minimum_edition_enum: EDITION_2023
+                maximum_edition_enum: EDITION_99997_TEST_ONLY
+              )pb"));
+}
+
+TEST_F(CommandLineInterfaceTest, EditionDefaultsWithMinimum) {
+  CreateTempFile("google/protobuf/descriptor.proto",
+                 google::protobuf::DescriptorProto::descriptor()->file()->DebugString());
+  Run("protocol_compiler --proto_path=$tmpdir "
+      "--experimental_edition_defaults_out=$tmpdir/defaults "
+      "--experimental_edition_defaults_minimum=99997_TEST_ONLY "
+      "--experimental_edition_defaults_maximum=99999_TEST_ONLY "
+      "google/protobuf/descriptor.proto");
+  ExpectNoErrors();
+
+  FeatureSetDefaults defaults = ReadEditionDefaults("defaults");
+  EXPECT_THAT(defaults, EqualsProto(R"pb(
+                defaults {
+                  edition_enum: EDITION_2023
+                  features {
+                    field_presence: EXPLICIT
+                    enum_type: OPEN
+                    repeated_field_encoding: PACKED
+                    message_encoding: LENGTH_PREFIXED
+                    json_format: ALLOW
+                  }
+                }
+                minimum_edition_enum: EDITION_99997_TEST_ONLY
+                maximum_edition_enum: EDITION_99999_TEST_ONLY
+              )pb"));
+}
+
+TEST_F(CommandLineInterfaceTest, EditionDefaultsWithExtension) {
+  CreateTempFile("google/protobuf/descriptor.proto",
+                 google::protobuf::DescriptorProto::descriptor()->file()->DebugString());
+  CreateTempFile("features.proto",
+                 pb::TestFeatures::descriptor()->file()->DebugString());
+  Run("protocol_compiler --proto_path=$tmpdir "
+      "--experimental_edition_defaults_out=$tmpdir/defaults "
+      "--experimental_edition_defaults_maximum=99999_TEST_ONLY "
+      "features.proto google/protobuf/descriptor.proto");
+  ExpectNoErrors();
+
+  FeatureSetDefaults defaults = ReadEditionDefaults("defaults");
+  EXPECT_EQ(defaults.minimum_edition_enum(), EDITION_2023);
+  EXPECT_EQ(defaults.maximum_edition_enum(), EDITION_99999_TEST_ONLY);
+  ASSERT_EQ(defaults.defaults_size(), 3);
+  EXPECT_EQ(defaults.defaults(0).edition_enum(), EDITION_2023);
+  EXPECT_EQ(defaults.defaults(1).edition_enum(), EDITION_99997_TEST_ONLY);
+  EXPECT_EQ(defaults.defaults(2).edition_enum(), EDITION_99998_TEST_ONLY);
+  EXPECT_EQ(
+      defaults.defaults(0).features().GetExtension(pb::test).int_file_feature(),
+      1);
+  EXPECT_EQ(
+      defaults.defaults(1).features().GetExtension(pb::test).int_file_feature(),
+      2);
+  EXPECT_EQ(
+      defaults.defaults(2).features().GetExtension(pb::test).int_file_feature(),
+      3);
+}
+
+#ifndef _WIN32
+TEST_F(CommandLineInterfaceTest, EditionDefaultsDependencyManifest) {
+  CreateTempFile("google/protobuf/descriptor.proto",
+                 google::protobuf::DescriptorProto::descriptor()->file()->DebugString());
+  CreateTempFile("features.proto",
+                 pb::TestFeatures::descriptor()->file()->DebugString());
+
+  Run("protocol_compiler --dependency_out=$tmpdir/manifest "
+      "--experimental_edition_defaults_out=$tmpdir/defaults "
+      "--proto_path=$tmpdir features.proto");
+
+  ExpectNoErrors();
+
+  ExpectFileContent(
+      "manifest",
+      "$tmpdir/defaults: "
+      "$tmpdir/google/protobuf/descriptor.proto\\\n $tmpdir/features.proto");
+}
+#endif  // _WIN32
+
+TEST_F(CommandLineInterfaceTest, EditionDefaultsInvalidMissingDescriptor) {
+  CreateTempFile("features.proto", R"schema(
+    syntax = "proto2";
+    message Foo {}
+  )schema");
+  Run("protocol_compiler --proto_path=$tmpdir "
+      "--experimental_edition_defaults_out=$tmpdir/defaults "
+      "features.proto");
+  ExpectErrorSubstring("Could not find FeatureSet in descriptor pool");
+}
+
+TEST_F(CommandLineInterfaceTest, EditionDefaultsInvalidTwice) {
+  CreateTempFile("google/protobuf/descriptor.proto",
+                 google::protobuf::DescriptorProto::descriptor()->file()->DebugString());
+  Run("protocol_compiler --proto_path=$tmpdir "
+      "--experimental_edition_defaults_out=$tmpdir/defaults "
+      "--experimental_edition_defaults_out=$tmpdir/defaults "
+      "google/protobuf/descriptor.proto");
+  ExpectErrorSubstring(
+      "experimental_edition_defaults_out may only be passed once");
+}
+
+TEST_F(CommandLineInterfaceTest, EditionDefaultsInvalidEmpty) {
+  CreateTempFile("google/protobuf/descriptor.proto",
+                 google::protobuf::DescriptorProto::descriptor()->file()->DebugString());
+  Run("protocol_compiler --proto_path=$tmpdir "
+      "--experimental_edition_defaults_out= "
+      "google/protobuf/descriptor.proto");
+  ExpectErrorSubstring(
+      "experimental_edition_defaults_out requires a non-empty value");
+}
+
+TEST_F(CommandLineInterfaceTest, EditionDefaultsInvalidCompile) {
+  CreateTempFile("google/protobuf/descriptor.proto",
+                 google::protobuf::DescriptorProto::descriptor()->file()->DebugString());
+  Run("protocol_compiler --proto_path=$tmpdir "
+      "--encode=pb.CppFeatures "
+      "--experimental_edition_defaults_out=$tmpdir/defaults "
+      "google/protobuf/descriptor.proto");
+  ExpectErrorSubstring("Cannot use --encode or --decode and generate defaults");
+}
+
+TEST_F(CommandLineInterfaceTest, EditionDefaultsInvalidMinimumTwice) {
+  CreateTempFile("google/protobuf/descriptor.proto",
+                 google::protobuf::DescriptorProto::descriptor()->file()->DebugString());
+  Run("protocol_compiler --proto_path=$tmpdir "
+      "--experimental_edition_defaults_minimum=2023 "
+      "--experimental_edition_defaults_minimum=2023 "
+      "google/protobuf/descriptor.proto");
+  ExpectErrorSubstring(
+      "experimental_edition_defaults_minimum may only be passed once");
+}
+
+TEST_F(CommandLineInterfaceTest, EditionDefaultsInvalidMinimumEmpty) {
+  CreateTempFile("google/protobuf/descriptor.proto",
+                 google::protobuf::DescriptorProto::descriptor()->file()->DebugString());
+  Run("protocol_compiler --proto_path=$tmpdir "
+      "--experimental_edition_defaults_minimum= "
+      "google/protobuf/descriptor.proto");
+  ExpectErrorSubstring("unknown edition \"\"");
+}
+
+TEST_F(CommandLineInterfaceTest, EditionDefaultsInvalidMinimumUnknown) {
+  CreateTempFile("google/protobuf/descriptor.proto",
+                 google::protobuf::DescriptorProto::descriptor()->file()->DebugString());
+  Run("protocol_compiler --proto_path=$tmpdir "
+      "--experimental_edition_defaults_minimum=2022 "
+      "google/protobuf/descriptor.proto");
+  ExpectErrorSubstring("unknown edition \"2022\"");
+}
+
+TEST_F(CommandLineInterfaceTest, EditionDefaultsInvalidMaximumTwice) {
+  CreateTempFile("google/protobuf/descriptor.proto",
+                 google::protobuf::DescriptorProto::descriptor()->file()->DebugString());
+  Run("protocol_compiler --proto_path=$tmpdir "
+      "--experimental_edition_defaults_maximum=2023 "
+      "--experimental_edition_defaults_maximum=2023 "
+      "google/protobuf/descriptor.proto");
+  ExpectErrorSubstring(
+      "experimental_edition_defaults_maximum may only be passed once");
+}
+
+TEST_F(CommandLineInterfaceTest, EditionDefaultsInvalidMaximumEmpty) {
+  CreateTempFile("google/protobuf/descriptor.proto",
+                 google::protobuf::DescriptorProto::descriptor()->file()->DebugString());
+  Run("protocol_compiler --proto_path=$tmpdir "
+      "--experimental_edition_defaults_maximum= "
+      "google/protobuf/descriptor.proto");
+  ExpectErrorSubstring("unknown edition \"\"");
+}
+
+TEST_F(CommandLineInterfaceTest, EditionDefaultsInvalidMaximumUnknown) {
+  CreateTempFile("google/protobuf/descriptor.proto",
+                 google::protobuf::DescriptorProto::descriptor()->file()->DebugString());
+  Run("protocol_compiler --proto_path=$tmpdir "
+      "--experimental_edition_defaults_maximum=2022 "
+      "google/protobuf/descriptor.proto");
+  ExpectErrorSubstring("unknown edition \"2022\"");
 }
 
 

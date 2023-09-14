@@ -1,32 +1,9 @@
 // Protocol Buffers - Google's data interchange format
 // Copyright 2008 Google Inc.  All rights reserved.
-// https://developers.google.com/protocol-buffers/
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//     * Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//     * Redistributions in binary form must reproduce the above
-// copyright notice, this list of conditions and the following disclaimer
-// in the documentation and/or other materials provided with the
-// distribution.
-//     * Neither the name of Google Inc. nor the names of its
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file or at
+// https://developers.google.com/open-source/licenses/bsd
 
 // Author: kenton@google.com (Kenton Varda)
 //  Based on original Protocol Buffers design by
@@ -1093,7 +1070,8 @@ void MessageGenerator::GenerateFieldClear(const FieldDescriptor* field,
                 // TODO(b/281513105): figure out if early return breaks tracking
                 if (ShouldSplit(field, options_)) {
                   p->Emit(R"cc(
-                    if (IsSplitMessageDefault()) return;
+                    if (PROTOBUF_PREDICT_TRUE(IsSplitMessageDefault()))
+                      return;
                   )cc");
                 }
                 field_generators_.get(field).GenerateClearingCode(p);
@@ -1558,14 +1536,16 @@ void MessageGenerator::GenerateClassDefinition(io::Printer* p) {
   }
 
   if (!HasSimpleBaseClass(descriptor_, options_)) {
-    format(
-        "int GetCachedSize() const final { return "
-        "$cached_size$.Get(); }"
-        "\n\nprivate:\n"
-        "void SharedCtor(::$proto_ns$::Arena* arena);\n"
-        "void SharedDtor();\n"
-        "void SetCachedSize(int size) const$ full_final$;\n"
-        "void InternalSwap($classname$* other);\n");
+    p->Emit(
+        R"cc(
+          int GetCachedSize() const { return $cached_size$.Get(); }
+
+          private:
+          $pbi$::CachedSize* AccessCachedSize() const final;
+          void SharedCtor(::$proto_ns$::Arena* arena);
+          void SharedDtor();
+          void InternalSwap($classname$* other);
+        )cc");
   }
 
   format(
@@ -1585,20 +1565,19 @@ void MessageGenerator::GenerateClassDefinition(io::Printer* p) {
 
   switch (NeedsArenaDestructor()) {
     case ArenaDtorNeeds::kOnDemand:
-      format(
-          "private:\n"
-          "static void ArenaDtor(void* object);\n"
-          "inline void OnDemandRegisterArenaDtor(::$proto_ns$::Arena* arena) "
-          "override {\n"
-          "  if (arena == nullptr || ($inlined_string_donated_array$[0] & "
-          "0x1u) "
-          "== "
-          "0) {\n"
-          "   return;\n"
-          "  }\n"
-          "  $inlined_string_donated_array$[0] &= 0xFFFFFFFEu;\n"
-          "  arena->OwnCustomDestructor(this, &$classname$::ArenaDtor);\n"
-          "}\n");
+      p->Emit(R"cc(
+        private:
+        static void ArenaDtor(void* object);
+        static void OnDemandRegisterArenaDtor(MessageLite& msg,
+                                              ::$proto_ns$::Arena& arena) {
+          auto& this_ = static_cast<$classname$&>(msg);
+          if ((this_.$inlined_string_donated_array$[0] & 0x1u) == 0) {
+            return;
+          }
+          this_.$inlined_string_donated_array$[0] &= 0xFFFFFFFEu;
+          arena.OwnCustomDestructor(&this_, &$classname$::ArenaDtor);
+        }
+      )cc");
       break;
     case ArenaDtorNeeds::kRequired:
       format(
@@ -1614,7 +1593,8 @@ void MessageGenerator::GenerateClassDefinition(io::Printer* p) {
       "\n");
 
   if (HasDescriptorMethods(descriptor_->file(), options_)) {
-    if (HasGeneratedMethods(descriptor_->file(), options_)) {
+    if (HasGeneratedMethods(descriptor_->file(), options_) &&
+        !HasSimpleBaseClass(descriptor_, options_)) {
       format(
           "static const ClassData _class_data_;\n"
           "const ::$proto_ns$::Message::ClassData*"
@@ -1863,7 +1843,7 @@ void MessageGenerator::GenerateClassDefinition(io::Printer* p) {
   }
 
   // For detecting when concurrent accessor calls cause races.
-  format("PROTOBUF_TSAN_DECLARE_MEMBER;\n");
+  format("PROTOBUF_TSAN_DECLARE_MEMBER\n");
 
   format.Outdent();
   format("};\n");
@@ -2090,7 +2070,7 @@ void MessageGenerator::GenerateClassMethods(io::Printer* p) {
   if (ShouldSplit(descriptor_, options_)) {
     format(
         "void $classname$::PrepareSplitMessageForWrite() {\n"
-        "  if (IsSplitMessageDefault()) {\n"
+        "  if (PROTOBUF_PREDICT_TRUE(IsSplitMessageDefault())) {\n"
         "    void* chunk = $pbi$::CreateSplitMessageGeneric("
         "GetArenaForAllocation(), &$1$, sizeof(Impl_::Split), this, &$2$);\n"
         "    $split$ = reinterpret_cast<Impl_::Split*>(chunk);\n"
@@ -2098,6 +2078,14 @@ void MessageGenerator::GenerateClassMethods(io::Printer* p) {
         "}\n",
         DefaultInstanceName(descriptor_, options_, /*split=*/true),
         DefaultInstanceName(descriptor_, options_, /*split=*/false));
+  }
+
+  if (!HasSimpleBaseClass(descriptor_, options_)) {
+    p->Emit(R"cc(
+      ::_pbi::CachedSize* $classname$::AccessCachedSize() const {
+        return &$cached_size$;
+      }
+    )cc");
   }
 
   GenerateVerify(p);
@@ -2690,7 +2678,7 @@ void MessageGenerator::GenerateSharedDestructorCode(io::Printer* p) {
                       [&] { emit_field_dtors(/* split_fields= */ true); }},
                  },
                  R"cc(
-                   if (!IsSplitMessageDefault()) {
+                   if (PROTOBUF_PREDICT_FALSE(!IsSplitMessageDefault())) {
                      auto* $cached_split_ptr$ = $split$;
                      $split_field_dtors_impl$;
                      delete $cached_split_ptr$;
@@ -2766,6 +2754,16 @@ void MessageGenerator::GenerateArenaDestructorCode(io::Printer* p) {
       field_generators_.get(field).GenerateArenaDestructorCode(p);
     }
   };
+  bool needs_arena_dtor_split = false;
+  for (const auto* field : optimized_order_) {
+    if (!ShouldSplit(field, options_)) continue;
+    if (field_generators_.get(field).NeedsArenaDestructor() >
+        ArenaDtorNeeds::kNone) {
+      needs_arena_dtor_split = true;
+      break;
+    }
+  }
+
   // This code is placed inside a static method, rather than an ordinary one,
   // since that simplifies Arena's destructor list (ordinary function pointers
   // rather than member function pointers). _this is the object being
@@ -2776,13 +2774,17 @@ void MessageGenerator::GenerateArenaDestructorCode(io::Printer* p) {
           {"split_field_dtors",
            [&] {
              if (!ShouldSplit(descriptor_, options_)) return;
+             if (!needs_arena_dtor_split) {
+               return;
+             }
              p->Emit(
                  {
                      {"split_field_dtors_impl",
                       [&] { emit_field_dtors(/* split_fields= */ true); }},
                  },
                  R"cc(
-                   if (!_this->IsSplitMessageDefault()) {
+                   if (PROTOBUF_PREDICT_FALSE(
+                           !_this->IsSplitMessageDefault())) {
                      $split_field_dtors_impl$;
                    }
                  )cc");
@@ -2983,7 +2985,7 @@ void MessageGenerator::GenerateCopyConstructorBody(io::Printer* p) const {
   }
 
   if (ShouldSplit(descriptor_, options_)) {
-    format("if (!from.IsSplitMessageDefault()) {\n");
+    format("if (PROTOBUF_PREDICT_FALSE(!from.IsSplitMessageDefault())) {\n");
     format.Indent();
     format("_this->PrepareSplitMessageForWrite();\n");
     // TODO(b/122856539): cache the split pointers.
@@ -3346,9 +3348,20 @@ void MessageGenerator::GenerateArenaEnabledCopyConstructor(io::Printer* p) {
     }
   };
 
+  auto maybe_register_arena_dtor = [&] {
+    if (NeedsArenaDestructor() == ArenaDtorNeeds::kRequired) {
+      p->Emit(R"cc(
+        if (arena != nullptr) {
+          arena->OwnCustomDestructor(this, &$classname$::ArenaDtor);
+        }
+      )cc");
+    }
+  };
+
   p->Emit({{"copy_construct_impl", copy_construct_impl},
            {"copy_init_fields", [&] { GenerateCopyInitFields(p); }},
-           {"force_allocation", force_allocation}},
+           {"force_allocation", force_allocation},
+           {"maybe_register_arena_dtor", maybe_register_arena_dtor}},
           R"cc(
             $classname$::$classname$(
                 //~ force alignment
@@ -3363,6 +3376,7 @@ void MessageGenerator::GenerateArenaEnabledCopyConstructor(io::Printer* p) {
               $copy_construct_impl$;
               $copy_init_fields$;
               $force_allocation$;
+              $maybe_register_arena_dtor$;
 
               // @@protoc_insertion_point(copy_constructor:$full_name$)
             }
@@ -3503,15 +3517,6 @@ void MessageGenerator::GenerateStructors(io::Printer* p) {
   if (NeedsArenaDestructor() > ArenaDtorNeeds::kNone) {
     GenerateArenaDestructorCode(p);
   }
-
-  if (!HasSimpleBaseClass(descriptor_, options_)) {
-    // Generate SetCachedSize.
-    p->Emit(R"cc(
-      void $classname$::SetCachedSize(int size) const {
-        $cached_size$.Set(size);
-      }
-    )cc");
-  }
 }
 
 void MessageGenerator::GenerateSourceInProto2Namespace(io::Printer* p) {
@@ -3615,7 +3620,6 @@ void MessageGenerator::GenerateClear(io::Printer* p) {
     auto next = FindNextUnequalChunk(it, end, MayGroupChunksForHaswordsCheck);
     bool has_haswords_check = MaybeEmitHaswordsCheck(
         it, next, options_, has_bit_indices_, cached_has_word_index, "", p);
-
     bool has_default_split_check = !it->fields.empty() && it->should_split;
     if (has_default_split_check) {
       // Some fields are cleared without checking has_bit. So we add the
@@ -3737,7 +3741,6 @@ void MessageGenerator::GenerateClear(io::Printer* p) {
       cached_has_word_index = -1;
     }
   }
-
   // Step 4: Unions.
   for (auto oneof : OneOfRange(descriptor_)) {
     format("clear_$1$();\n", oneof->name());
@@ -3809,7 +3812,9 @@ void MessageGenerator::GenerateSwap(io::Printer* p) {
   if (HasSimpleBaseClass(descriptor_, options_)) return;
   Formatter format(p);
 
-  format("void $classname$::InternalSwap($classname$* other) {\n");
+  format(
+      "void $classname$::InternalSwap($classname$* PROTOBUF_RESTRICT other) "
+      "{\n");
   format.Indent();
   format("using std::swap;\n");
 
@@ -3913,48 +3918,49 @@ void MessageGenerator::GenerateSwap(io::Printer* p) {
 
 void MessageGenerator::GenerateMergeFrom(io::Printer* p) {
   Formatter format(p);
-  if (!HasSimpleBaseClass(descriptor_, options_)) {
-    if (HasDescriptorMethods(descriptor_->file(), options_)) {
-      // We don't override the generalized MergeFrom (aka that which
-      // takes in the Message base class as a parameter); instead we just
-      // let the base Message::MergeFrom take care of it.  The base MergeFrom
-      // knows how to quickly confirm the types exactly match, and if so, will
-      // use GetClassData() to retrieve the address of MergeImpl, which calls
-      // the fast MergeFrom overload.  Most callers avoid all this by passing
-      // a "from" message that is the same type as the message being merged
-      // into, rather than a generic Message.
+  if (HasSimpleBaseClass(descriptor_, options_)) return;
+  if (HasDescriptorMethods(descriptor_->file(), options_)) {
+    // We don't override the generalized MergeFrom (aka that which
+    // takes in the Message base class as a parameter); instead we just
+    // let the base Message::MergeFrom take care of it.  The base MergeFrom
+    // knows how to quickly confirm the types exactly match, and if so, will
+    // use GetClassData() to retrieve the address of MergeImpl, which calls
+    // the fast MergeFrom overload.  Most callers avoid all this by passing
+    // a "from" message that is the same type as the message being merged
+    // into, rather than a generic Message.
 
-      format(
-          "const ::$proto_ns$::Message::ClassData "
-          "$classname$::_class_data_ = {\n"
-          "    ::$proto_ns$::Message::CopyWithSourceCheck,\n"
-          "    $classname$::MergeImpl\n"
-          "};\n"
-          "const ::$proto_ns$::Message::ClassData*"
-          "$classname$::GetClassData() const { return &_class_data_; }\n"
-          "\n");
-    } else {
-      // Generate CheckTypeAndMergeFrom().
-      format(
-          "void $classname$::CheckTypeAndMergeFrom(\n"
-          "    const ::$proto_ns$::MessageLite& from) {\n"
-          "  MergeFrom(*::_pbi::DownCast<const $classname$*>(\n"
-          "      &from));\n"
-          "}\n");
-    }
+    p->Emit(
+        {
+            {"on_demand_register_arena_dtor",
+             [&] {
+               if (NeedsArenaDestructor() == ArenaDtorNeeds::kOnDemand) {
+                 p->Emit(R"cc(
+                   $classname$::OnDemandRegisterArenaDtor,
+                 )cc");
+               } else {
+                 p->Emit(R"cc(
+                   nullptr,  // OnDemandRegisterArenaDtor
+                 )cc");
+               }
+             }},
+        },
+        R"cc(
+          const ::$proto_ns$::Message::ClassData $classname$::_class_data_ = {
+              $classname$::MergeImpl,
+              $on_demand_register_arena_dtor$,
+          };
+          const ::$proto_ns$::Message::ClassData* $classname$::GetClassData() const {
+            return &_class_data_;
+          }
+        )cc");
   } else {
-    // In the simple case, we just define ClassData that vectors back to the
-    // simple implementation of Copy and Merge.
+    // Generate CheckTypeAndMergeFrom().
     format(
-        "const ::$proto_ns$::Message::ClassData "
-        "$classname$::_class_data_ = {\n"
-        "    $superclass$::CopyImpl,\n"
-        "    $superclass$::MergeImpl,\n"
-        "};\n"
-        "const ::$proto_ns$::Message::ClassData*"
-        "$classname$::GetClassData() const { return &_class_data_; }\n"
-        "\n"
-        "\n");
+        "void $classname$::CheckTypeAndMergeFrom(\n"
+        "    const ::$proto_ns$::MessageLite& from) {\n"
+        "  MergeFrom(*::_pbi::DownCast<const $classname$*>(\n"
+        "      &from));\n"
+        "}\n");
   }
 }
 
@@ -3989,7 +3995,7 @@ void MessageGenerator::GenerateClassSpecificMergeImpl(io::Printer* p) {
 
   if (ShouldSplit(descriptor_, options_)) {
     format(
-        "if (!from.IsSplitMessageDefault()) {\n"
+        "if (PROTOBUF_PREDICT_FALSE(!from.IsSplitMessageDefault())) {\n"
         "  _this->PrepareSplitMessageForWrite();\n"
         "}\n");
   }
@@ -4719,8 +4725,7 @@ void MessageGenerator::GenerateByteSize(io::Printer* p) {
             if ($have_unknown_fields$) {
               total_size += ::_pbi::ComputeUnknownMessageSetItemsSize($unknown_fields$);
             }
-            int cached_size = ::_pbi::ToCachedSize(total_size);
-            SetCachedSize(cached_size);
+            $cached_size$.Set(::_pbi::ToCachedSize(total_size));
             return total_size;
           }
         )cc");
@@ -4888,10 +4893,10 @@ void MessageGenerator::GenerateByteSize(io::Printer* p) {
     // abstract away the underlying atomic. This makes it easier on platforms
     // where even relaxed memory order might have perf impact to replace it with
     // ordinary loads and stores.
-    format(
-        "int cached_size = ::_pbi::ToCachedSize(total_size);\n"
-        "SetCachedSize(cached_size);\n"
-        "return total_size;\n");
+    p->Emit(R"cc(
+      $cached_size$.Set(::_pbi::ToCachedSize(total_size));
+      return total_size;
+    )cc");
   }
 
   format.Outdent();

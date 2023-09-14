@@ -36,12 +36,12 @@
 
 #include <string.h>
 
-#include "upb/base/internal/log2.h"
-#include "upb/hash/int_table.h"
-#include "upb/hash/str_table.h"
+#include "upb/upb/base/internal/log2.h"
+#include "upb/upb/hash/int_table.h"
+#include "upb/upb/hash/str_table.h"
 
 // Must be last.
-#include "upb/port/def.inc"
+#include "upb/upb/port/def.inc"
 
 #define UPB_MAXARRSIZE 16  // 2**16 = 64k.
 
@@ -70,23 +70,6 @@ static int log2ceil(uint64_t v) {
   while (v >>= 1) ret++;
   ret = pow2 ? ret : ret + 1;  // Ceiling.
   return UPB_MIN(UPB_MAXARRSIZE, ret);
-}
-
-char* upb_strdup2(const char* s, size_t len, upb_Arena* a) {
-  size_t n;
-  char* p;
-
-  /* Prevent overflow errors. */
-  if (len == SIZE_MAX) return NULL;
-  /* Always null-terminate, even if binary data; but don't rely on the input to
-   * have a null-terminating byte since it may be a raw binary buffer. */
-  n = len + 1;
-  p = upb_Arena_Malloc(a, n);
-  if (p) {
-    if (len != 0) memcpy(p, s, len);
-    p[len] = 0;
-  }
-  return p;
 }
 
 /* A type to represent the lookup key of either a strtable or an inttable. */

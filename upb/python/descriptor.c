@@ -28,15 +28,15 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include "python/descriptor.h"
+#include "upb/python/descriptor.h"
 
-#include "python/convert.h"
-#include "python/descriptor_containers.h"
-#include "python/descriptor_pool.h"
-#include "python/message.h"
-#include "python/protobuf.h"
-#include "upb/reflection/def.h"
-#include "upb/util/def_to_proto.h"
+#include "upb/python/convert.h"
+#include "upb/python/descriptor_containers.h"
+#include "upb/python/descriptor_pool.h"
+#include "upb/python/message.h"
+#include "upb/python/protobuf.h"
+#include "upb/upb/reflection/def.h"
+#include "upb/upb/util/def_to_proto.h"
 
 // -----------------------------------------------------------------------------
 // DescriptorBase
@@ -46,9 +46,10 @@
 
 typedef struct {
   PyObject_HEAD;
-  PyObject* pool;     // We own a ref.
-  const void* def;    // Type depends on the class. Kept alive by "pool".
-  PyObject* options;  // NULL if not present or not cached.
+  PyObject* pool;          // We own a ref.
+  const void* def;         // Type depends on the class. Kept alive by "pool".
+  PyObject* options;       // NULL if not present or not cached.
+  PyObject* message_meta;  // We own a ref.
 } PyUpb_DescriptorBase;
 
 PyObject* PyUpb_AnyDescriptor_GetPool(PyObject* desc) {
@@ -71,6 +72,7 @@ static PyUpb_DescriptorBase* PyUpb_DescriptorBase_DoCreate(
   base->pool = PyUpb_DescriptorPool_Get(upb_FileDef_Pool(file));
   base->def = def;
   base->options = NULL;
+  base->message_meta = NULL;
 
   PyUpb_ObjCache_Add(def, &base->ob_base);
   return base;
@@ -194,9 +196,21 @@ static PyObject* PyUpb_DescriptorBase_CopyToProto(PyObject* _self,
 
 static void PyUpb_DescriptorBase_Dealloc(PyUpb_DescriptorBase* base) {
   PyUpb_ObjCache_Delete(base->def);
+  Py_XDECREF(base->message_meta);
   Py_DECREF(base->pool);
   Py_XDECREF(base->options);
   PyUpb_Dealloc(base);
+}
+
+static int PyUpb_Descriptor_Traverse(PyUpb_DescriptorBase* base,
+                                     visitproc visit, void* arg) {
+  Py_VISIT(base->message_meta);
+  return 0;
+}
+
+static int PyUpb_Descriptor_Clear(PyUpb_DescriptorBase* base) {
+  Py_CLEAR(base->message_meta);
+  return 0;
 }
 
 #define DESCRIPTOR_BASE_SLOTS                           \
@@ -217,6 +231,13 @@ PyObject* PyUpb_Descriptor_Get(const upb_MessageDef* m) {
 PyObject* PyUpb_Descriptor_GetClass(const upb_MessageDef* m) {
   PyObject* ret = PyUpb_ObjCache_Get(upb_MessageDef_MiniTable(m));
   return ret;
+}
+
+void PyUpb_Descriptor_SetClass(PyObject* py_descriptor, PyObject* meta) {
+  PyUpb_DescriptorBase* base = (PyUpb_DescriptorBase*)py_descriptor;
+  Py_XDECREF(base->message_meta);
+  base->message_meta = meta;
+  Py_INCREF(meta);
 }
 
 // The LookupNested*() functions provide name lookup for entities nested inside
@@ -618,7 +639,13 @@ static PyGetSetDef PyUpb_Descriptor_Getters[] = {
      "Containing type"},
     {"is_extendable", PyUpb_Descriptor_GetIsExtendable, NULL},
     {"has_options", PyUpb_Descriptor_GetHasOptions, NULL, "Has Options"},
+    // begin:github_only
     {"syntax", &PyUpb_Descriptor_GetSyntax, NULL, "Syntax"},
+    // end:github_only
+    // begin:google_only
+//     // TODO(b/271287872) Use this to open-source syntax deprecation.
+//     {"deprecated_syntax", &PyUpb_Descriptor_GetSyntax, NULL, "Syntax"},
+    // end:google_only
     {NULL}};
 
 static PyMethodDef PyUpb_Descriptor_Methods[] = {
@@ -631,13 +658,15 @@ static PyType_Slot PyUpb_Descriptor_Slots[] = {
     DESCRIPTOR_BASE_SLOTS,
     {Py_tp_methods, PyUpb_Descriptor_Methods},
     {Py_tp_getset, PyUpb_Descriptor_Getters},
+    {Py_tp_traverse, PyUpb_Descriptor_Traverse},
+    {Py_tp_clear, PyUpb_Descriptor_Clear},
     {0, NULL}};
 
 static PyType_Spec PyUpb_Descriptor_Spec = {
     PYUPB_MODULE_NAME ".Descriptor",  // tp_name
     sizeof(PyUpb_DescriptorBase),     // tp_basicsize
     0,                                // tp_itemsize
-    Py_TPFLAGS_DEFAULT,               // tp_flags
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC, // tp_flags
     PyUpb_Descriptor_Slots,
 };
 
@@ -917,21 +946,22 @@ static PyObject* PyUpb_FieldDescriptor_GetType(PyUpb_DescriptorBase* self,
   return PyLong_FromLong(upb_FieldDef_Type(self->def));
 }
 
+// Enum values copied from descriptor.h in C++.
+enum CppType {
+  CPPTYPE_INT32 = 1,     // TYPE_INT32, TYPE_SINT32, TYPE_SFIXED32
+  CPPTYPE_INT64 = 2,     // TYPE_INT64, TYPE_SINT64, TYPE_SFIXED64
+  CPPTYPE_UINT32 = 3,    // TYPE_UINT32, TYPE_FIXED32
+  CPPTYPE_UINT64 = 4,    // TYPE_UINT64, TYPE_FIXED64
+  CPPTYPE_DOUBLE = 5,    // TYPE_DOUBLE
+  CPPTYPE_FLOAT = 6,     // TYPE_FLOAT
+  CPPTYPE_BOOL = 7,      // TYPE_BOOL
+  CPPTYPE_ENUM = 8,      // TYPE_ENUM
+  CPPTYPE_STRING = 9,    // TYPE_STRING, TYPE_BYTES
+  CPPTYPE_MESSAGE = 10,  // TYPE_MESSAGE, TYPE_GROUP
+};
+
 static PyObject* PyUpb_FieldDescriptor_GetCppType(PyUpb_DescriptorBase* self,
                                                   void* closure) {
-  // Enum values copied from descriptor.h in C++.
-  enum CppType {
-    CPPTYPE_INT32 = 1,     // TYPE_INT32, TYPE_SINT32, TYPE_SFIXED32
-    CPPTYPE_INT64 = 2,     // TYPE_INT64, TYPE_SINT64, TYPE_SFIXED64
-    CPPTYPE_UINT32 = 3,    // TYPE_UINT32, TYPE_FIXED32
-    CPPTYPE_UINT64 = 4,    // TYPE_UINT64, TYPE_FIXED64
-    CPPTYPE_DOUBLE = 5,    // TYPE_DOUBLE
-    CPPTYPE_FLOAT = 6,     // TYPE_FLOAT
-    CPPTYPE_BOOL = 7,      // TYPE_BOOL
-    CPPTYPE_ENUM = 8,      // TYPE_ENUM
-    CPPTYPE_STRING = 9,    // TYPE_STRING, TYPE_BYTES
-    CPPTYPE_MESSAGE = 10,  // TYPE_MESSAGE, TYPE_GROUP
-  };
   static const uint8_t cpp_types[] = {
       -1,
       [kUpb_CType_Int32] = CPPTYPE_INT32,
@@ -1053,7 +1083,7 @@ static PyGetSetDef PyUpb_FieldDescriptor_Getters[] = {
      "Default Value"},
     {"has_default_value", (getter)PyUpb_FieldDescriptor_HasDefaultValue},
     {"is_extension", (getter)PyUpb_FieldDescriptor_GetIsExtension, NULL, "ID"},
-    // TODO(https://github.com/protocolbuffers/upb/issues/459)
+    // TODO(https://github.com/protocolbuffers/protobuf/issues/13760)
     //{ "id", (getter)GetID, NULL, "ID"},
     {"message_type", (getter)PyUpb_FieldDescriptor_GetMessageType, NULL,
      "Message type"},
@@ -1068,7 +1098,7 @@ static PyGetSetDef PyUpb_FieldDescriptor_Getters[] = {
      "Has Options"},
     {"has_presence", (getter)PyUpb_FieldDescriptor_GetHasPresence, NULL,
      "Has Presence"},
-    // TODO(https://github.com/protocolbuffers/upb/issues/459)
+    // TODO(https://github.com/protocolbuffers/protobuf/issues/13760)
     //{ "_options",
     //(getter)NULL, (setter)SetOptions, "Options"}, { "_serialized_options",
     //(getter)NULL, (setter)SetSerializedOptions, "Serialized Options"},
@@ -1304,7 +1334,14 @@ static PyGetSetDef PyUpb_FileDescriptor_Getters[] = {
     {"public_dependencies", PyUpb_FileDescriptor_GetPublicDependencies, NULL,
      "Dependencies"},
     {"has_options", PyUpb_FileDescriptor_GetHasOptions, NULL, "Has Options"},
+    // begin:github_only
     {"syntax", PyUpb_FileDescriptor_GetSyntax, (setter)NULL, "Syntax"},
+    // end:github_only
+    // begin:google_only
+//     // TODO(b/271287872) Use this to open-source syntax deprecation.
+//     {"deprecated_syntax", PyUpb_FileDescriptor_GetSyntax, (setter)NULL,
+//      "Syntax"},
+    // end:google_only
     {NULL},
 };
 
@@ -1697,5 +1734,16 @@ bool PyUpb_InitDescriptor(PyObject* m) {
          PyUpb_SetIntAttr(fd, "TYPE_SINT64", kUpb_FieldType_SInt64) &&
          PyUpb_SetIntAttr(fd, "TYPE_STRING", kUpb_FieldType_String) &&
          PyUpb_SetIntAttr(fd, "TYPE_UINT32", kUpb_FieldType_UInt32) &&
-         PyUpb_SetIntAttr(fd, "TYPE_UINT64", kUpb_FieldType_UInt64);
+         PyUpb_SetIntAttr(fd, "TYPE_UINT64", kUpb_FieldType_UInt64) &&
+         PyUpb_SetIntAttr(fd, "CPPTYPE_INT32", CPPTYPE_INT32) &&
+         PyUpb_SetIntAttr(fd, "CPPTYPE_INT64", CPPTYPE_INT64) &&
+         PyUpb_SetIntAttr(fd, "CPPTYPE_UINT32", CPPTYPE_UINT32) &&
+         PyUpb_SetIntAttr(fd, "CPPTYPE_UINT64", CPPTYPE_UINT64) &&
+         PyUpb_SetIntAttr(fd, "CPPTYPE_DOUBLE", CPPTYPE_DOUBLE) &&
+         PyUpb_SetIntAttr(fd, "CPPTYPE_FLOAT", CPPTYPE_FLOAT) &&
+         PyUpb_SetIntAttr(fd, "CPPTYPE_BOOL", CPPTYPE_BOOL) &&
+         PyUpb_SetIntAttr(fd, "CPPTYPE_ENUM", CPPTYPE_ENUM) &&
+         PyUpb_SetIntAttr(fd, "CPPTYPE_STRING", CPPTYPE_STRING) &&
+         PyUpb_SetIntAttr(fd, "CPPTYPE_BYTES", CPPTYPE_STRING) &&
+         PyUpb_SetIntAttr(fd, "CPPTYPE_MESSAGE", CPPTYPE_MESSAGE);
 }

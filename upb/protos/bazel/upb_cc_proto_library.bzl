@@ -1,34 +1,16 @@
 # Copyright (c) 2009-2021, Google LLC
 # All rights reserved.
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-#     * Redistributions of source code must retain the above copyright
-#       notice, this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above copyright
-#       notice, this list of conditions and the following disclaimer in the
-#       documentation and/or other materials provided with the distribution.
-#     * Neither the name of Google LLC nor the
-#       names of its contributors may be used to endorse or promote products
-#       derived from this software without specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-# DISCLAIMED. IN NO EVENT SHALL Google LLC BE LIABLE FOR ANY
-# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# Use of this source code is governed by a BSD-style
+# license that can be found in the LICENSE file or at
+# https://developers.google.com/open-source/licenses/bsd
 
 """Public rules for using upb protos:
   - upb_cc_proto_library()
 """
 
 load("@bazel_skylib//lib:paths.bzl", "paths")
-load("//bazel:upb_proto_library.bzl", "GeneratedSrcsInfo", "UpbWrappedCcInfo", "upb_proto_library_aspect")
+load("//upb/bazel:upb_proto_library.bzl", "GeneratedSrcsInfo", "UpbWrappedCcInfo", "upb_proto_library_aspect")
 
 # begin:google_only
 # load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain", "use_cpp_toolchain")
@@ -247,17 +229,17 @@ def _upb_cc_proto_library_aspect_impl(target, ctx):
 _upb_cc_proto_library_aspect = aspect(
     attrs = {
         "_ccopts": attr.label(
-            default = "//protos:upb_cc_proto_library_copts__for_generated_code_only_do_not_use",
+            default = "//upb/protos:upb_cc_proto_library_copts__for_generated_code_only_do_not_use",
         ),
         "_gen_upbprotos": attr.label(
             executable = True,
             cfg = "exec",
-            default = "//protos_generator:protoc-gen-upb-protos",
+            default = "//upb/protos_generator:protoc-gen-upb-protos",
         ),
         "_protoc": attr.label(
             executable = True,
             cfg = "exec",
-            default = "@com_google_protobuf//:protoc",
+            default = "//:protoc",
         ),
         "_cc_toolchain": attr.label(
             default = "@bazel_tools//tools/cpp:current_cc_toolchain",
@@ -265,12 +247,12 @@ _upb_cc_proto_library_aspect = aspect(
         "_upbprotos": attr.label_list(
             default = [
                 # TODO: Add dependencies for cc runtime (absl/string etc..)
-                "//:generated_cpp_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
-                "//protos:generated_protos_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
+                "//upb:generated_cpp_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
+                "//upb/protos:generated_protos_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
                 "@com_google_absl//absl/strings",
                 "@com_google_absl//absl/status:statusor",
-                "//protos",
-                "//protos:repeated_field",
+                "//upb/protos",
+                "//upb/protos:repeated_field",
             ],
         ),
     },
@@ -301,7 +283,7 @@ upb_cc_proto_library = rule(
             providers = [ProtoInfo],
         ),
         "_ccopts": attr.label(
-            default = "//protos:upb_cc_proto_library_copts__for_generated_code_only_do_not_use",
+            default = "//upb/protos:upb_cc_proto_library_copts__for_generated_code_only_do_not_use",
         ),
     },
 )

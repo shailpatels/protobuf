@@ -28,21 +28,21 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include "upb/util/def_to_proto.h"
+#include "upb/upb/util/def_to_proto.h"
 
 #include <inttypes.h>
 #include <math.h>
 
-#include "upb/port/vsnprintf_compat.h"
-#include "upb/reflection/enum_reserved_range.h"
-#include "upb/reflection/extension_range.h"
-#include "upb/reflection/internal/field_def.h"
-#include "upb/reflection/internal/file_def.h"
-#include "upb/reflection/message.h"
-#include "upb/reflection/message_reserved_range.h"
+#include "upb/upb/port/vsnprintf_compat.h"
+#include "upb/upb/reflection/enum_reserved_range.h"
+#include "upb/upb/reflection/extension_range.h"
+#include "upb/upb/reflection/internal/field_def.h"
+#include "upb/upb/reflection/internal/file_def.h"
+#include "upb/upb/reflection/message.h"
+#include "upb/upb/reflection/message_reserved_range.h"
 
 // Must be last.
-#include "upb/port/def.inc"
+#include "upb/upb/port/def.inc"
 
 typedef struct {
   upb_Arena* arena;
@@ -528,12 +528,8 @@ static google_protobuf_FileDescriptorProto* filedef_toproto(upb_ToProto_Context*
     }
   }
 
-  const char* edition = upb_FileDef_Edition(f);
-  if (edition != NULL) {
-    size_t n = strlen(edition);
-    if (n != 0) {
-      google_protobuf_FileDescriptorProto_set_edition(proto, strviewdup(ctx, edition));
-    }
+  if (upb_FileDef_Syntax(f) == kUpb_Syntax_Editions) {
+    google_protobuf_FileDescriptorProto_set_edition_enum(proto, upb_FileDef_Edition(f));
   }
 
   if (upb_FileDef_Syntax(f) == kUpb_Syntax_Proto3) {

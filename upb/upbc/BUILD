@@ -1,47 +1,29 @@
 # Copyright (c) 2009-2021, Google LLC
 # All rights reserved.
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-#     * Redistributions of source code must retain the above copyright
-#       notice, this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above copyright
-#       notice, this list of conditions and the following disclaimer in the
-#       documentation and/or other materials provided with the distribution.
-#     * Neither the name of Google LLC nor the
-#       names of its contributors may be used to endorse or promote products
-#       derived from this software without specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-# DISCLAIMED. IN NO EVENT SHALL Google LLC BE LIABLE FOR ANY
-# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# Use of this source code is governed by a BSD-style
+# license that can be found in the LICENSE file or at
+# https://developers.google.com/open-source/licenses/bsd
 
 load(
-    "//bazel:build_defs.bzl",
+    "//upb/bazel:build_defs.bzl",
     "UPB_DEFAULT_COPTS",
     "UPB_DEFAULT_CPPOPTS",
 )
 load(
-    "//bazel:upb_proto_library.bzl",
+    "//upb/bazel:upb_proto_library.bzl",
     "upb_proto_library",
     "upb_proto_reflection_library",
 )
 load(
-    "//upbc:bootstrap_compiler.bzl",
+    "//upb/upbc:bootstrap_compiler.bzl",
     "bootstrap_cc_binary",
     "bootstrap_cc_library",
     "bootstrap_upb_proto_library",
 )
 
 # begin:google_only
-# package(default_applicable_licenses = ["//:license"])
+# package(default_applicable_licenses = ["//upb:license"])
 # end:google_only
 
 licenses(["notice"])
@@ -49,19 +31,19 @@ licenses(["notice"])
 proto_library(
     name = "code_generator_request",
     srcs = ["code_generator_request.proto"],
-    visibility = ["//:friends"],
-    deps = ["@com_google_protobuf//:compiler_plugin_proto"],
+    visibility = ["//upb:friends"],
+    deps = ["//:compiler_plugin_proto"],
 )
 
 upb_proto_library(
     name = "code_generator_request_upb_proto",
-    visibility = ["//:friends"],
+    visibility = ["//upb:friends"],
     deps = [":code_generator_request"],
 )
 
 upb_proto_reflection_library(
     name = "code_generator_request_upb_proto_reflection",
-    visibility = ["//:friends"],
+    visibility = ["//upb:friends"],
     deps = [":code_generator_request"],
 )
 
@@ -81,19 +63,19 @@ bootstrap_upb_proto_library(
     ],
     oss_src_files = ["google/protobuf/compiler/plugin.proto"],
     oss_src_rules = [
-        "@com_google_protobuf//:descriptor_proto_srcs",
-        "@com_google_protobuf//src/google/protobuf/compiler:plugin_proto_src",
+        "//:descriptor_proto_srcs",
+        "//src/google/protobuf/compiler:plugin_proto_src",
     ],
     oss_strip_prefix = "third_party/protobuf/github/bootstrap/src",
-    proto_lib_deps = ["@com_google_protobuf//:compiler_plugin_proto"],
-    visibility = ["//:friends"],
-    deps = ["//:descriptor_upb_proto"],
+    proto_lib_deps = ["//:compiler_plugin_proto"],
+    visibility = ["//upb:friends"],
+    deps = ["//upb:descriptor_upb_proto"],
 )
 
 upb_proto_reflection_library(
     name = "plugin_upb_proto_reflection",
-    visibility = ["//:friends"],
-    deps = ["@com_google_protobuf//:compiler_plugin_proto"],
+    visibility = ["//upb:friends"],
+    deps = ["//:compiler_plugin_proto"],
 )
 
 bootstrap_cc_library(
@@ -105,10 +87,10 @@ bootstrap_cc_library(
         "common.h",
     ],
     bootstrap_deps = [
-        "//:reflection",
+        "//upb:reflection",
     ],
     copts = UPB_DEFAULT_CPPOPTS,
-    visibility = ["//protos_generator:__pkg__"],
+    visibility = ["//upb/protos_generator:__pkg__"],
     deps = [
         "@com_google_absl//absl/strings",
     ],
@@ -124,17 +106,17 @@ bootstrap_cc_library(
     ],
     bootstrap_deps = [
         ":common",
-        "//:reflection",
-        "//:descriptor_upb_proto",
+        "//upb:reflection",
+        "//upb:descriptor_upb_proto",
     ],
     copts = UPB_DEFAULT_CPPOPTS,
-    visibility = ["//protos_generator:__pkg__"],
+    visibility = ["//upb/protos_generator:__pkg__"],
     deps = [
-        "//:base",
-        "//:mini_descriptor",
-        "//:mini_table",
-        "//:mini_table_internal",
-        "//:port",
+        "//upb:base",
+        "//upb:mini_descriptor",
+        "//upb:mini_table",
+        "//upb:mini_table_internal",
+        "//upb:port",
         "@com_google_absl//absl/container:flat_hash_map",
         "@com_google_absl//absl/strings",
     ],
@@ -149,7 +131,7 @@ cc_library(
         "keywords.h",
     ],
     copts = UPB_DEFAULT_CPPOPTS,
-    visibility = ["//protos_generator:__pkg__"],
+    visibility = ["//upb/protos_generator:__pkg__"],
 )
 
 bootstrap_cc_library(
@@ -159,13 +141,13 @@ bootstrap_cc_library(
     ],
     bootstrap_deps = [
         ":plugin_upb_proto",
-        "//:descriptor_upb_proto",
-        "//:reflection",
+        "//upb:descriptor_upb_proto",
+        "//upb:reflection",
     ],
     copts = UPB_DEFAULT_CPPOPTS,
-    visibility = ["//protos_generator:__pkg__"],
+    visibility = ["//upb/protos_generator:__pkg__"],
     deps = [
-        "//:port",
+        "//upb:port",
         "@com_google_absl//absl/container:flat_hash_set",
         "@com_google_absl//absl/log:absl_check",
         "@com_google_absl//absl/log:absl_log",
@@ -182,16 +164,16 @@ bootstrap_cc_library(
         "names.h",
     ],
     bootstrap_deps = [
-        "//:reflection",
+        "//upb:reflection",
     ],
     copts = UPB_DEFAULT_CPPOPTS,
-    visibility = ["//protos_generator:__pkg__"],
+    visibility = ["//upb/protos_generator:__pkg__"],
     deps = [
+        "//:protobuf",
+        "//src/google/protobuf/compiler:code_generator",
         "@com_google_absl//absl/base:core_headers",
         "@com_google_absl//absl/container:flat_hash_map",
         "@com_google_absl//absl/strings",
-        "@com_google_protobuf//:protobuf",
-        "@com_google_protobuf//src/google/protobuf/compiler:code_generator",
     ],
 )
 
@@ -204,7 +186,7 @@ cc_binary(
     visibility = ["//visibility:public"],
     deps = [
         ":upbdev",
-        "//:port",
+        "//upb:port",
     ],
 )
 
@@ -227,16 +209,16 @@ cc_library(
         ":code_generator_request_upb_proto_reflection",
         ":plugin_upb_proto",
         ":plugin_upb_proto_reflection",
-        "//:base",
-        "//:descriptor_upb_proto",
-        "//:json",
-        "//:mem",
-        "//:mini_descriptor",
-        "//:mini_table",
-        "//:port",
-        "//:reflection",
-        "//:reflection_internal",
-        "//:wire",
+        "//upb:base",
+        "//upb:descriptor_upb_proto",
+        "//upb:json",
+        "//upb:mem",
+        "//upb:mini_descriptor",
+        "//upb:mini_table",
+        "//upb:port",
+        "//upb:reflection",
+        "//upb:reflection_internal",
+        "//upb:wire",
     ],
 )
 
@@ -249,17 +231,17 @@ bootstrap_cc_binary(
         ":names",
         ":plugin",
         ":plugin_upb_proto",
-        "//:descriptor_upb_proto",
-        "//:reflection",
+        "//upb:descriptor_upb_proto",
+        "//upb:reflection",
     ],
     copts = UPB_DEFAULT_CPPOPTS,
     visibility = ["//visibility:public"],
     deps = [
-        "//:base",
-        "//:mem",
-        "//:mini_table_internal",
-        "//:port",
-        "//:wire_types",
+        "//upb:base",
+        "//upb:mem",
+        "//upb:mini_table_internal",
+        "//upb:port",
+        "//upb:wire_types",
         "@com_google_absl//absl/container:flat_hash_map",
         "@com_google_absl//absl/container:flat_hash_set",
         "@com_google_absl//absl/log:absl_check",
@@ -284,9 +266,9 @@ cc_binary(
         ":common",
         ":file_layout",
         ":plugin",
-        "//:descriptor_upb_proto",
-        "//:reflection",
-        "//upb/util:def_to_proto",
+        "//upb:descriptor_upb_proto",
+        "//upb:reflection",
+        "//upb/upb/util:def_to_proto",
     ],
 )
 
@@ -306,7 +288,7 @@ cc_binary(
     deps = [
         ":plugin_upb_proto",
         ":upbdev",
-        "//:port",
+        "//upb:port",
         "@com_google_absl//absl/log:absl_log",
         "@com_google_absl//absl/strings",
     ],

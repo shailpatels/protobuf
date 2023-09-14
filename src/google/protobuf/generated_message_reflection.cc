@@ -1,32 +1,9 @@
 // Protocol Buffers - Google's data interchange format
 // Copyright 2008 Google Inc.  All rights reserved.
-// https://developers.google.com/protocol-buffers/
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//     * Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//     * Redistributions in binary form must reproduce the above
-// copyright notice, this list of conditions and the following disclaimer
-// in the documentation and/or other materials provided with the
-// distribution.
-//     * Neither the name of Google Inc. nor the names of its
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file or at
+// https://developers.google.com/open-source/licenses/bsd
 
 // Author: kenton@google.com (Kenton Varda)
 //  Based on original Protocol Buffers design by
@@ -54,6 +31,7 @@
 #include "google/protobuf/descriptor.pb.h"
 #include "google/protobuf/descriptor_legacy.h"
 #include "google/protobuf/extension_set.h"
+#include "google/protobuf/generated_message_tctable_decl.h"
 #include "google/protobuf/generated_message_tctable_gen.h"
 #include "google/protobuf/generated_message_tctable_impl.h"
 #include "google/protobuf/generated_message_util.h"
@@ -3218,21 +3196,20 @@ static uint32_t AlignTo(uint32_t v) {
 }
 
 static internal::TailCallParseFunc GetFastParseFunction(
-    absl::string_view func_name) {
-#define PROTOBUF_TC_PARSE_FUNCTION_X(value) \
-  {"::_pbi::TcParser::" #value, internal::TcParser::value},
-  static const auto* const map =
-      new absl::flat_hash_map<absl::string_view, internal::TailCallParseFunc>{
-          PROTOBUF_TC_PARSE_FUNCTION_LIST};
+    internal::TcParseFunction func) {
+#define PROTOBUF_TC_PARSE_FUNCTION_X(value) internal::TcParser::value,
+  static constexpr internal::TailCallParseFunc kFuncs[] = {
+      {}, PROTOBUF_TC_PARSE_FUNCTION_LIST};
 #undef PROTOBUF_TC_PARSE_FUNCTION_X
-  auto it = map->find(func_name);
-  if (it == map->end()) {
-    ABSL_DLOG(FATAL) << "Failed to find function: " << func_name;
+  const int index = static_cast<int>(func);
+  if (index < 0 || index >= std::end(kFuncs) - std::begin(kFuncs) ||
+      kFuncs[index] == nullptr) {
+    ABSL_DLOG(FATAL) << "Failed to find function: " << static_cast<int>(func);
     // Let's not crash in opt, just in case.
     // MiniParse is always a valid parser.
     return &internal::TcParser::MiniParse;
   }
-  return it->second;
+  return kFuncs[index];
 }
 
 const internal::TcParseTableBase* Reflection::CreateTcParseTableReflectionOnly()
@@ -3259,11 +3236,11 @@ void Reflection::PopulateTcParseFastEntries(
   for (const auto& fast_field : table_info.fast_path_fields) {
     if (auto* nonfield = fast_field.AsNonField()) {
       // No field, but still a special entry.
-      *fast_entries++ = {GetFastParseFunction(nonfield->func_name),
+      *fast_entries++ = {GetFastParseFunction(nonfield->func),
                          {nonfield->coded_tag, nonfield->nonfield_info}};
     } else if (auto* as_field = fast_field.AsField()) {
       *fast_entries++ = {
-          GetFastParseFunction(as_field->func_name),
+          GetFastParseFunction(as_field->func),
           {as_field->coded_tag, as_field->hasbit_idx, as_field->aux_idx,
            static_cast<uint16_t>(schema_.GetFieldOffset(as_field->field))}};
     } else {

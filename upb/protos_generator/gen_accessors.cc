@@ -28,7 +28,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include "protos_generator/gen_accessors.h"
+#include "upb/protos_generator/gen_accessors.h"
 
 #include <string>
 
@@ -37,13 +37,13 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "google/protobuf/descriptor.h"
-#include "protos_generator/gen_repeated_fields.h"
-#include "protos_generator/gen_utils.h"
-#include "protos_generator/names.h"
-#include "protos_generator/output.h"
-#include "upbc/common.h"
-#include "upbc/keywords.h"
-#include "upbc/names.h"
+#include "upb/protos_generator/gen_repeated_fields.h"
+#include "upb/protos_generator/gen_utils.h"
+#include "upb/protos_generator/names.h"
+#include "upb/protos_generator/output.h"
+#include "upb/upbc/common.h"
+#include "upb/upbc/keywords.h"
+#include "upb/upbc/names.h"
 
 namespace protos_generator {
 
@@ -447,18 +447,26 @@ void WriteUsingAccessorsInHeader(const protobuf::Descriptor* desc,
     // Generate hazzer (if any).
     if (field->has_presence()) {
       output("using $0Access::has_$1;\n", class_name, resolved_field_name);
-      output("using $0Access::clear_$1;\n", class_name, resolved_field_name);
+      if (!read_only) {
+        output("using $0Access::clear_$1;\n", class_name, resolved_field_name);
+      }
     }
     if (field->is_map()) {
       output(
           R"cc(
             using $0Access::$1_size;
-            using $0Access::clear_$1;
-            using $0Access::delete_$1;
             using $0Access::get_$1;
-            using $0Access::set_$1;
           )cc",
           class_name, resolved_field_name);
+      if (!read_only) {
+        output(
+            R"cc(
+              using $0Access::clear_$1;
+              using $0Access::delete_$1;
+              using $0Access::set_$1;
+            )cc",
+            class_name, resolved_field_name);
+      }
     } else if (desc->options().map_entry()) {
       // TODO(b/237399867) Implement map entry
     } else if (field->is_repeated()) {

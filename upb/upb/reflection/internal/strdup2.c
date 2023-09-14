@@ -28,26 +28,29 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef UPB_WIRE_INTERNAL_COMMON_H_
-#define UPB_WIRE_INTERNAL_COMMON_H_
+#include "upb/upb/reflection/internal/strdup2.h"
+
+#include <string.h>
+
+#include "upb/upb/mem/arena.h"
 
 // Must be last.
-#include "upb/port/def.inc"
+#include "upb/upb/port/def.inc"
 
-// MessageSet wire format is:
-//   message MessageSet {
-//     repeated group Item = 1 {
-//       required int32 type_id = 2;
-//       required bytes message = 3;
-//     }
-//   }
+char* upb_strdup2(const char* s, size_t len, upb_Arena* a) {
+  size_t n;
+  char* p;
 
-enum {
-  kUpb_MsgSet_Item = 1,
-  kUpb_MsgSet_TypeId = 2,
-  kUpb_MsgSet_Message = 3,
-};
+  // Prevent overflow errors.
+  if (len == SIZE_MAX) return NULL;
 
-#include "upb/port/undef.inc"
-
-#endif /* UPB_WIRE_INTERNAL_COMMON_H_ */
+  // Always null-terminate, even if binary data; but don't rely on the input to
+  // have a null-terminating byte since it may be a raw binary buffer.
+  n = len + 1;
+  p = upb_Arena_Malloc(a, n);
+  if (p) {
+    if (len != 0) memcpy(p, s, len);
+    p[len] = 0;
+  }
+  return p;
+}

@@ -1,32 +1,9 @@
 # Protocol Buffers - Google's data interchange format
 # Copyright 2008 Google Inc.  All rights reserved.
-# https://developers.google.com/protocol-buffers/
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are
-# met:
-#
-#     * Redistributions of source code must retain the above copyright
-# notice, this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above
-# copyright notice, this list of conditions and the following disclaimer
-# in the documentation and/or other materials provided with the
-# distribution.
-#     * Neither the name of Google Inc. nor the names of its
-# contributors may be used to endorse or promote products derived from
-# this software without specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# Use of this source code is governed by a BSD-style
+# license that can be found in the LICENSE file or at
+# https://developers.google.com/open-source/licenses/bsd
 
 """Unittest for google.protobuf.internal.descriptor."""
 
@@ -553,6 +530,7 @@ class DescriptorTest(unittest.TestCase):
     self.assertEqual(self.my_file.package, 'protobuf_unittest')
     self.assertEqual(self.my_file.pool, self.pool)
     self.assertFalse(self.my_file.has_options)
+    self.assertEqual(self.my_file.syntax, 'proto2')
     file_proto = descriptor_pb2.FileDescriptorProto()
     self.my_file.CopyToProto(file_proto)
     self.assertEqual(self.my_file.serialized_pb,
@@ -810,6 +788,15 @@ class GeneratedDescriptorTest(unittest.TestCase):
                      oneof_descriptor.full_name)
     self.assertEqual(0, oneof_descriptor.index)
 
+  def testDescriptorSlice(self):
+    message_descriptor = unittest_pb2.TestAllTypes.DESCRIPTOR
+    nested = message_descriptor.nested_types[:]
+    self.assertEqual(message_descriptor.nested_types, nested)
+    fields = message_descriptor.fields
+    fields_list = list(fields)
+    self.assertEqual(fields_list[:], fields[:])
+    self.assertEqual(fields_list[2::2], fields[2::2])
+    self.assertEqual(fields_list[3:19:3], fields[3:19:3])
 
 class DescriptorCopyToProtoTest(unittest.TestCase):
   """Tests for CopyTo functions of Descriptor."""
@@ -1132,8 +1119,12 @@ class MakeDescriptorTest(unittest.TestCase):
     result = descriptor.MakeDescriptor(message_type)
     self.assertEqual(result.fields[0].cpp_type,
                      descriptor.FieldDescriptor.CPPTYPE_UINT64)
+    self.assertEqual(result.fields[0].cpp_type,
+                     result.fields[0].CPPTYPE_UINT64)
     self.assertEqual(result.fields[1].cpp_type,
                      descriptor.FieldDescriptor.CPPTYPE_MESSAGE)
+    self.assertEqual(result.fields[1].cpp_type,
+                     result.fields[1].CPPTYPE_MESSAGE)
     self.assertEqual(result.fields[1].message_type.containing_type,
                      result)
     self.assertEqual(result.nested_types[0].fields[0].full_name,

@@ -1,50 +1,32 @@
 # Copyright (c) 2009-2021, Google LLC
 # All rights reserved.
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-#     * Redistributions of source code must retain the above copyright
-#       notice, this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above copyright
-#       notice, this list of conditions and the following disclaimer in the
-#       documentation and/or other materials provided with the distribution.
-#     * Neither the name of Google LLC nor the
-#       names of its contributors may be used to endorse or promote products
-#       derived from this software without specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-# DISCLAIMED. IN NO EVENT SHALL Google LLC BE LIABLE FOR ANY
-# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# Use of this source code is governed by a BSD-style
+# license that can be found in the LICENSE file or at
+# https://developers.google.com/open-source/licenses/bsd
 
 load(
-    "//bazel:build_defs.bzl",
+    "//upb/bazel:build_defs.bzl",
     "UPB_DEFAULT_CPPOPTS",
 )
 load(
-    "//bazel:upb_proto_library.bzl",
+    "//upb/bazel:upb_proto_library.bzl",
     "upb_proto_library",
     "upb_proto_reflection_library",
 )
 
 # begin:google_only
-# package(default_applicable_licenses = ["//:license"])
+# package(default_applicable_licenses = ["//upb:license"])
 # end:google_only
 
 cc_library(
     name = "parse_text_proto",
     testonly = 1,
     hdrs = ["parse_text_proto.h"],
-    visibility = ["//:__subpackages__"],
+    visibility = ["//upb:__subpackages__"],
     deps = [
+        "//:protobuf",
         "@com_google_googletest//:gtest",
-        "@com_google_protobuf//:protobuf",
     ],
 )
 
@@ -63,7 +45,7 @@ proto_library(
     name = "proto3_test_proto",
     testonly = 1,
     srcs = ["proto3_test.proto"],
-    deps = ["@com_google_protobuf//:descriptor_proto"],
+    deps = ["//:descriptor_proto"],
 )
 
 upb_proto_library(
@@ -87,14 +69,14 @@ proto_library(
 upb_proto_library(
     name = "test_upb_proto",
     testonly = 1,
-    visibility = ["//:__subpackages__"],
+    visibility = ["//upb:__subpackages__"],
     deps = [":test_proto"],
 )
 
 proto_library(
     name = "test_cpp_proto",
     srcs = ["test_cpp.proto"],
-    deps = ["@com_google_protobuf//:timestamp_proto"],
+    deps = ["//:timestamp_proto"],
 )
 
 upb_proto_library(
@@ -110,25 +92,25 @@ upb_proto_reflection_library(
 upb_proto_library(
     name = "test_messages_proto2_upb_proto",
     testonly = 1,
-    visibility = ["//:__subpackages__"],
-    deps = ["@com_google_protobuf//src/google/protobuf:test_messages_proto2_proto"],
+    visibility = ["//upb:__subpackages__"],
+    deps = ["//src/google/protobuf:test_messages_proto2_proto"],
 )
 
 upb_proto_library(
     name = "test_messages_proto3_upb_proto",
     testonly = 1,
-    visibility = ["//:__subpackages__"],
-    deps = ["@com_google_protobuf//src/google/protobuf:test_messages_proto3_proto"],
+    visibility = ["//upb:__subpackages__"],
+    deps = ["//src/google/protobuf:test_messages_proto3_proto"],
 )
 
 upb_proto_library(
     name = "timestamp_upb_proto",
-    deps = ["@com_google_protobuf//:timestamp_proto"],
+    deps = ["//:timestamp_proto"],
 )
 
 upb_proto_reflection_library(
     name = "timestamp_upb_proto_reflection",
-    deps = ["@com_google_protobuf//:timestamp_proto"],
+    deps = ["//:timestamp_proto"],
 )
 
 cc_library(
@@ -136,14 +118,14 @@ cc_library(
     testonly = 1,
     srcs = ["fuzz_util.cc"],
     hdrs = ["fuzz_util.h"],
-    visibility = ["//:__subpackages__"],
+    visibility = ["//upb:__subpackages__"],
     deps = [
-        "//:base",
-        "//:message",
-        "//:mini_descriptor",
-        "//:mini_table",
-        "//:mini_table_internal",
-        "//:port",
+        "//upb:base",
+        "//upb:message",
+        "//upb:mini_descriptor",
+        "//upb:mini_table",
+        "//upb:mini_table_internal",
+        "//upb:port",
     ],
 )
 
@@ -154,7 +136,7 @@ cc_test(
     deps = [
         ":proto3_test_upb_proto",
         ":proto3_test_upb_proto_reflection",
-        "//:reflection",
+        "//upb:reflection",
         "@com_google_googletest//:gtest_main",
     ],
 )
@@ -168,9 +150,9 @@ cc_test(
         ":test_cpp_upb_proto_reflection",
         ":timestamp_upb_proto",
         ":timestamp_upb_proto_reflection",
-        "//:json",
-        "//:port",
-        "//:reflection",
+        "//upb:json",
+        "//upb:port",
+        "//upb:reflection",
         "@com_google_googletest//:gtest_main",
     ],
 )
@@ -185,10 +167,10 @@ cc_test(
         ":test_messages_proto2_upb_proto",
         ":test_messages_proto3_upb_proto",
         ":test_upb_proto",
-        "//:base",
-        "//:collections",
-        "//:mem",
-        "//:port",
+        "//upb:base",
+        "//upb:collections",
+        "//upb:mem",
+        "//upb:port",
         "@com_google_googletest//:gtest_main",
     ],
 )
@@ -203,9 +185,9 @@ cc_test(
         ":test_messages_proto2_upb_proto",
         ":test_messages_proto3_upb_proto",
         ":test_upb_proto",
-        "//:mini_table",
-        "//:mini_table_internal",
-        "//:port",
+        "//upb:mini_table",
+        "//upb:mini_table_internal",
+        "//upb:port",
         "@com_google_googletest//:gtest_main",
     ],
 )

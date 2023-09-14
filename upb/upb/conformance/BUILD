@@ -1,41 +1,23 @@
 # Copyright (c) 2009-2021, Google LLC
 # All rights reserved.
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-#     * Redistributions of source code must retain the above copyright
-#       notice, this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above copyright
-#       notice, this list of conditions and the following disclaimer in the
-#       documentation and/or other materials provided with the distribution.
-#     * Neither the name of Google LLC nor the
-#       names of its contributors may be used to endorse or promote products
-#       derived from this software without specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-# DISCLAIMED. IN NO EVENT SHALL Google LLC BE LIABLE FOR ANY
-# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# Use of this source code is governed by a BSD-style
+# license that can be found in the LICENSE file or at
+# https://developers.google.com/open-source/licenses/bsd
 
 load(
-    "//bazel:build_defs.bzl",
+    "//upb/bazel:build_defs.bzl",
     "UPB_DEFAULT_COPTS",
     "make_shell_script",
 )
 load(
-    "//bazel:upb_proto_library.bzl",
+    "//upb/bazel:upb_proto_library.bzl",
     "upb_proto_library",
     "upb_proto_reflection_library",
 )
 
 # begin:google_only
-# package(default_applicable_licenses = ["//:license"])
+# package(default_applicable_licenses = ["//upb:license"])
 # end:google_only
 
 licenses(["notice"])
@@ -49,13 +31,13 @@ config_setting(
 upb_proto_library(
     name = "conformance_upb_proto",
     testonly = 1,
-    deps = ["@com_google_protobuf//conformance:conformance_proto"],
+    deps = ["//conformance:conformance_proto"],
 )
 
 upb_proto_reflection_library(
     name = "conformance_upb_proto_reflection",
     testonly = 1,
-    deps = ["@com_google_protobuf//conformance:conformance_proto"],
+    deps = ["//conformance:conformance_proto"],
 )
 
 upb_proto_reflection_library(
@@ -64,7 +46,7 @@ upb_proto_reflection_library(
     visibility = [
         "//visibility:private",  # Only private by automation, not intent. Owner may accept CLs adding visibility. See go/scheuklappen#explicit-private.
     ],
-    deps = ["@com_google_protobuf//src/google/protobuf:test_messages_proto2_proto"],
+    deps = ["//src/google/protobuf:test_messages_proto2_proto"],
 )
 
 upb_proto_reflection_library(
@@ -73,7 +55,7 @@ upb_proto_reflection_library(
     visibility = [
         "//visibility:private",  # Only private by automation, not intent. Owner may accept CLs adding visibility. See go/scheuklappen#explicit-private.
     ],
-    deps = ["@com_google_protobuf//src/google/protobuf:test_messages_proto3_proto"],
+    deps = ["//src/google/protobuf:test_messages_proto3_proto"],
 )
 
 cc_binary(
@@ -91,11 +73,11 @@ cc_binary(
         ":conformance_upb_proto_reflection",
         ":test_messages_proto2_upbdefs",
         ":test_messages_proto3_upbdefs",
-        "//:json",
-        "//:port",
-        "//:reflection",
-        "//:text",
-        "//:wire",
+        "//upb:json",
+        "//upb:port",
+        "//upb:reflection",
+        "//upb:text",
+        "//upb:wire",
     ],
 )
 
@@ -109,14 +91,14 @@ sh_test(
     name = "test_conformance_upb",
     srcs = ["test_conformance_upb.sh"],
     args = [
-        "$(location @com_google_protobuf//conformance:conformance_test_runner)",
+        "$(location //conformance:conformance_test_runner)",
         "$(location :conformance_upb_failures.txt)",
         "$(location :conformance_upb)",
     ],
     data = [
         "conformance_upb_failures.txt",
         ":conformance_upb",
-        "@com_google_protobuf//conformance:conformance_test_runner",
+        "//conformance:conformance_test_runner",
     ],
     target_compatible_with = select({
         "@platforms//os:windows": ["@platforms//:incompatible"],
@@ -142,11 +124,11 @@ cc_binary(
         ":conformance_upb_proto_reflection",
         ":test_messages_proto2_upbdefs",
         ":test_messages_proto3_upbdefs",
-        "//:json",
-        "//:port",
-        "//:reflection",
-        "//:text",
-        "//:wire",
+        "//upb:json",
+        "//upb:port",
+        "//upb:reflection",
+        "//upb:text",
+        "//upb:wire",
     ],
 )
 
@@ -160,14 +142,14 @@ sh_test(
     name = "test_conformance_upb_dynamic_minitable",
     srcs = ["test_conformance_upb_dynamic_minitable.sh"],
     args = [
-        "$(location @com_google_protobuf//conformance:conformance_test_runner)",
+        "$(location //conformance:conformance_test_runner)",
         "$(location :conformance_upb_failures.txt)",
         "$(location :conformance_upb_dynamic_minitable)",
     ],
     data = [
         "conformance_upb_failures.txt",
         ":conformance_upb_dynamic_minitable",
-        "@com_google_protobuf//conformance:conformance_test_runner",
+        "//conformance:conformance_test_runner",
     ],
     deps = ["@bazel_tools//tools/bash/runfiles"],
 )

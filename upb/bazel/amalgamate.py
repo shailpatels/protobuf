@@ -34,7 +34,7 @@ import sys
 import re
 import os
 
-INCLUDE_RE = re.compile('^#include "([^"]*)"$')
+INCLUDE_RE = re.compile('^#include "([^"]*)"')
 
 def parse_include(line):
   match = INCLUDE_RE.match(line)
@@ -79,6 +79,8 @@ class Amalgamator:
       while not lines[0].startswith(
           "// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH"
           " DAMAGE"
+      ) and not lines[0].startswith(
+          "// https://developers.google.com/open-source/licenses/bsd"
       ):
         lines.pop(0)
       lines.pop(0)

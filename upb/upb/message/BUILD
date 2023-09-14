@@ -1,31 +1,13 @@
 # Copyright (c) 2009-2021, Google LLC
 # All rights reserved.
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-#     * Redistributions of source code must retain the above copyright
-#       notice, this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above copyright
-#       notice, this list of conditions and the following disclaimer in the
-#       documentation and/or other materials provided with the distribution.
-#     * Neither the name of Google LLC nor the
-#       names of its contributors may be used to endorse or promote products
-#       derived from this software without specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-# DISCLAIMED. IN NO EVENT SHALL Google LLC BE LIABLE FOR ANY
-# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# Use of this source code is governed by a BSD-style
+# license that can be found in the LICENSE file or at
+# https://developers.google.com/open-source/licenses/bsd
 
-load("//bazel:build_defs.bzl", "UPB_DEFAULT_COPTS")
+load("//upb/bazel:build_defs.bzl", "UPB_DEFAULT_COPTS")
 load(
-    "//bazel:upb_proto_library.bzl",
+    "//upb/bazel:upb_proto_library.bzl",
     "upb_proto_library",
     "upb_proto_reflection_library",
 )
@@ -44,15 +26,15 @@ cc_library(
     deps = [
         ":internal",
         ":message",
-        "//:base",
-        "//:collections",
-        "//:collections_internal",
-        "//:eps_copy_input_stream",
-        "//:mini_table",
-        "//:mini_table_internal",
-        "//:port",
-        "//:wire",
-        "//:wire_reader",
+        "//upb:base",
+        "//upb:collections",
+        "//upb:collections_internal",
+        "//upb:eps_copy_input_stream",
+        "//upb:mini_table",
+        "//upb:mini_table_internal",
+        "//upb:port",
+        "//upb:wire",
+        "//upb:wire_reader",
     ],
 )
 
@@ -65,9 +47,9 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         ":internal",
-        "//:collections_internal",
-        "//:mini_table_internal",
-        "//:port",
+        "//upb:collections_internal",
+        "//upb:mini_table_internal",
+        "//upb:port",
     ],
 )
 
@@ -86,12 +68,12 @@ cc_library(
         ":internal",
         ":message",
         ":types",
-        "//:base",
-        "//:collections_internal",
-        "//:mem",
-        "//:mini_table",
-        "//:mini_table_internal",
-        "//:port",
+        "//upb:base",
+        "//upb:collections_internal",
+        "//upb:mem",
+        "//upb:mini_table",
+        "//upb:mini_table_internal",
+        "//upb:port",
     ],
 )
 
@@ -108,13 +90,24 @@ cc_library(
     copts = UPB_DEFAULT_COPTS,
     visibility = ["//visibility:public"],
     deps = [
+        ":internal_types",
         ":types",
-        "//:base",
-        "//:base_internal",
-        "//:hash",
-        "//:mem",
-        "//:mini_table",
-        "//:port",
+        "//upb:base",
+        "//upb:base_internal",
+        "//upb:mem",
+        "//upb:mini_table",
+        "//upb:port",
+    ],
+)
+
+cc_library(
+    name = "internal_types",
+    hdrs = [
+        "internal/types.h",
+    ],
+    copts = UPB_DEFAULT_COPTS,
+    visibility = ["//visibility:public"],
+    deps = [
     ],
 )
 
@@ -128,10 +121,10 @@ cc_library(
     deps = [
         ":internal",
         ":types",
-        "//:base",
-        "//:mem",
-        "//:mini_table",
-        "//:port",
+        "//upb:base",
+        "//upb:mem",
+        "//upb:mini_table",
+        "//upb:port",
     ],
 )
 
@@ -147,32 +140,22 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         ":accessors",
+        ":accessors_internal",
         ":internal",
         ":message",
         ":types",
-        "//:base",
-        "//:collections",
-        "//:collections_internal",
-        "//:eps_copy_input_stream",
-        "//:hash",
-        "//:mem",
-        "//:mini_table",
-        "//:port",
-        "//:wire",
-        "//:wire_reader",
-    ],
-)
-
-cc_library(
-    name = "rep_internal",
-    hdrs = [
-        "internal/map_entry.h",
-    ],
-    copts = UPB_DEFAULT_COPTS,
-    visibility = ["//visibility:public"],
-    deps = [
-        "//:base",
-        "//:hash",
+        "//upb:base",
+        "//upb:collections",
+        "//upb:collections_internal",
+        "//upb:eps_copy_input_stream",
+        "//upb:mem",
+        "//upb:message_tagged_ptr",
+        "//upb:mini_table",
+        "//upb:mini_table_internal",
+        "//upb:port",
+        "//upb:wire",
+        "//upb:wire_internal",
+        "//upb:wire_reader",
     ],
 )
 
@@ -185,7 +168,7 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         ":accessors",
-        "//:port",
+        "//upb:port",
     ],
 )
 
@@ -196,7 +179,7 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         ":types",
-        "//:port",
+        "//upb:port",
     ],
 )
 
@@ -216,7 +199,7 @@ proto_library(
     name = "message_test_proto",
     testonly = 1,
     srcs = ["test.proto"],
-    deps = ["@com_google_protobuf//src/google/protobuf:test_messages_proto3_proto"],
+    deps = ["//src/google/protobuf:test_messages_proto3_proto"],
 )
 
 upb_proto_library(
@@ -236,19 +219,19 @@ cc_test(
     srcs = ["accessors_test.cc"],
     deps = [
         ":accessors",
-        "//:base",
-        "//:collections",
-        "//:mini_descriptor",
-        "//:mini_descriptor_internal",
-        "//:mini_table",
-        "//:port",
-        "//:wire",
-        "//upb/test:test_messages_proto2_upb_proto",
-        "//upb/test:test_messages_proto3_upb_proto",
-        "//upb/test:test_upb_proto",
+        "//:protobuf",
+        "//upb:base",
+        "//upb:collections",
+        "//upb:mini_descriptor",
+        "//upb:mini_descriptor_internal",
+        "//upb:mini_table",
+        "//upb:port",
+        "//upb:wire",
+        "//upb/upb/test:test_messages_proto2_upb_proto",
+        "//upb/upb/test:test_messages_proto3_upb_proto",
+        "//upb/upb/test:test_upb_proto",
         "@com_google_absl//absl/container:flat_hash_set",
         "@com_google_googletest//:gtest_main",
-        "@com_google_protobuf//:protobuf",
     ],
 )
 
@@ -260,17 +243,17 @@ cc_test(
         ":copy",
         ":internal",
         ":message",
-        "//:base",
-        "//:collections",
-        "//:mem",
-        "//:mini_table",
-        "//:wire",
-        "//upb/test:test_messages_proto2_upb_proto",
-        "//upb/test:test_messages_proto3_upb_proto",
-        "//upb/test:test_upb_proto",
+        "//:protobuf",
+        "//upb:base",
+        "//upb:collections",
+        "//upb:mem",
+        "//upb:mini_table",
+        "//upb:wire",
+        "//upb/upb/test:test_messages_proto2_upb_proto",
+        "//upb/upb/test:test_messages_proto3_upb_proto",
+        "//upb/upb/test:test_upb_proto",
         "@com_google_absl//absl/container:flat_hash_set",
         "@com_google_googletest//:gtest_main",
-        "@com_google_protobuf//:protobuf",
     ],
 )
 
@@ -281,19 +264,19 @@ cc_test(
         ":accessors",
         ":copy",
         ":promote",
-        "//:base",
-        "//:collections",
-        "//:mem",
-        "//:mini_descriptor_internal",
-        "//:mini_table",
-        "//:port",
-        "//:wire",
-        "//upb/test:test_messages_proto2_upb_proto",
-        "//upb/test:test_messages_proto3_upb_proto",
-        "//upb/test:test_upb_proto",
+        "//:protobuf",
+        "//upb:base",
+        "//upb:collections",
+        "//upb:mem",
+        "//upb:mini_descriptor_internal",
+        "//upb:mini_table",
+        "//upb:port",
+        "//upb:wire",
+        "//upb/upb/test:test_messages_proto2_upb_proto",
+        "//upb/upb/test:test_messages_proto3_upb_proto",
+        "//upb/upb/test:test_upb_proto",
         "@com_google_absl//absl/container:flat_hash_set",
         "@com_google_googletest//:gtest_main",
-        "@com_google_protobuf//:protobuf",
     ],
 )
 
@@ -305,13 +288,13 @@ cc_test(
     deps = [
         ":message_test_upb_proto",
         ":message_test_upb_proto_reflection",
-        "//:base",
-        "//:json",
-        "//:mem",
-        "//:reflection",
-        "//:wire",
-        "//upb/test:fuzz_util",
-        "//upb/test:test_messages_proto3_upb_proto",
+        "//upb:base",
+        "//upb:json",
+        "//upb:mem",
+        "//upb:reflection",
+        "//upb:wire",
+        "//upb/upb/test:fuzz_util",
+        "//upb/upb/test:test_messages_proto3_upb_proto",
         "@com_google_googletest//:gtest_main",
     ],
 )
@@ -326,8 +309,8 @@ filegroup(
         ],
     ),
     visibility = [
-        "//cmake:__pkg__",
-        "//python/dist:__pkg__",
+        "//upb/cmake:__pkg__",
+        "//upb/python/dist:__pkg__",
     ]
 )
 # end:github_only

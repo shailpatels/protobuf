@@ -36,12 +36,13 @@
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "upb/base/status.hpp"
-#include "upb/mem/arena.hpp"
-#include "upb/message/copy.h"
-#include "upb/message/internal/extension.h"
-#include "upb/wire/decode.h"
-#include "upb/wire/encode.h"
+#include "upb/upb/base/status.hpp"
+#include "upb/upb/mem/arena.hpp"
+#include "upb/upb/message/copy.h"
+#include "upb/upb/message/internal/accessors.h"
+#include "upb/upb/message/internal/extension.h"
+#include "upb/upb/wire/decode.h"
+#include "upb/upb/wire/encode.h"
 
 namespace protos {
 
@@ -101,21 +102,6 @@ class Ptr final {
   Proxy<T> p_;
 };
 
-namespace internal {
-struct PrivateAccess {
-  template <typename T>
-  static auto* GetInternalMsg(T&& message) {
-    return message->msg();
-  }
-};
-
-template <typename T>
-auto* GetInternalMsg(T&& message) {
-  return PrivateAccess::GetInternalMsg(std::forward<T>(message));
-}
-
-}  // namespace internal
-
 inline absl::string_view UpbStrToStringView(upb_StringView str) {
   return absl::string_view(str.data, str.size);
 }
@@ -162,6 +148,26 @@ absl::Status MessageEncodeError(upb_EncodeStatus status,
                                 SourceLocation loc = SourceLocation::current());
 
 namespace internal {
+struct PrivateAccess {
+  template <typename T>
+  static auto* GetInternalMsg(T&& message) {
+    return message->msg();
+  }
+  template <typename T>
+  static auto Proxy(void* p, upb_Arena* arena) {
+    return typename T::Proxy(p, arena);
+  }
+  template <typename T>
+  static auto CProxy(const void* p, upb_Arena* arena) {
+    return typename T::CProxy(p, arena);
+  }
+};
+
+template <typename T>
+auto* GetInternalMsg(T&& message) {
+  return PrivateAccess::GetInternalMsg(std::forward<T>(message));
+}
+
 template <typename T>
 T CreateMessage() {
   return T();
@@ -173,8 +179,8 @@ typename T::Proxy CreateMessageProxy(void* msg, upb_Arena* arena) {
 }
 
 template <typename T>
-typename T::CProxy CreateMessage(upb_Message* msg, upb_Arena* arena) {
-  return typename T::CProxy(msg, arena);
+typename T::CProxy CreateMessage(const upb_Message* msg, upb_Arena* arena) {
+  return PrivateAccess::CProxy<T>(msg, arena);
 }
 
 class ExtensionMiniTableProvider {
@@ -248,6 +254,14 @@ void DeepCopy(upb_Message* target, const upb_Message* source,
 upb_Message* DeepClone(const upb_Message* source,
                        const upb_MiniTable* mini_table, upb_Arena* arena);
 
+absl::Status MoveExtension(upb_Message* message, upb_Arena* message_arena,
+                           const upb_MiniTableExtension* ext,
+                           upb_Message* extension, upb_Arena* extension_arena);
+
+absl::Status SetExtension(upb_Message* message, upb_Arena* message_arena,
+                          const upb_MiniTableExtension* ext,
+                          const upb_Message* extension);
+
 }  // namespace internal
 
 template <typename T>
@@ -260,11 +274,11 @@ void DeepCopy(Ptr<const T> source_message, Ptr<T> target_message) {
 }
 
 template <typename T>
-typename T::Proxy CloneMessage(Ptr<T> message, upb::Arena& arena) {
-  return typename T::Proxy(
+typename T::Proxy CloneMessage(Ptr<T> message, upb_Arena* arena) {
+  return internal::PrivateAccess::Proxy<T>(
       ::protos::internal::DeepClone(internal::GetInternalMsg(message),
-                                    T::minitable(), arena.ptr()),
-      arena.ptr());
+                                    T::minitable(), arena),
+      arena);
 }
 
 template <typename T>
@@ -369,20 +383,27 @@ template <typename T, typename Extendee, typename Extension,
 absl::Status SetExtension(
     Ptr<T> message,
     const ::protos::internal::ExtensionIdentifier<Extendee, Extension>& id,
-    Extension& value) {
+    const Extension& value) {
   static_assert(!std::is_const_v<T>);
   auto* message_arena = static_cast<upb_Arena*>(message->GetInternalArena());
-  upb_Message_Extension* msg_ext = _upb_Message_GetOrCreateExtension(
-      internal::GetInternalMsg(message), id.mini_table_ext(), message_arena);
-  if (!msg_ext) {
-    return MessageAllocationError();
-  }
-  auto* extension_arena = static_cast<upb_Arena*>(message->GetInternalArena());
-  if (message_arena != extension_arena) {
-    upb_Arena_Fuse(message_arena, extension_arena);
-  }
-  msg_ext->data.ptr = internal::GetInternalMsg(&value);
-  return absl::OkStatus();
+  return ::protos::internal::SetExtension(internal::GetInternalMsg(message),
+                                          message_arena, id.mini_table_ext(),
+                                          internal::GetInternalMsg(&value));
+}
+
+template <typename T, typename Extendee, typename Extension,
+          typename = EnableIfProtosClass<T>, typename = EnableIfMutableProto<T>>
+absl::Status SetExtension(
+    Ptr<T> message,
+    const ::protos::internal::ExtensionIdentifier<Extendee, Extension>& id,
+    Extension&& value) {
+  Extension ext = std::move(value);
+  static_assert(!std::is_const_v<T>);
+  auto* message_arena = static_cast<upb_Arena*>(message->GetInternalArena());
+  auto* extension_arena = static_cast<upb_Arena*>(ext.GetInternalArena());
+  return ::protos::internal::MoveExtension(
+      internal::GetInternalMsg(message), message_arena, id.mini_table_ext(),
+      internal::GetInternalMsg(&ext), extension_arena);
 }
 
 template <typename T, typename Extendee, typename Extension,
@@ -390,8 +411,18 @@ template <typename T, typename Extendee, typename Extension,
 absl::Status SetExtension(
     T* message,
     const ::protos::internal::ExtensionIdentifier<Extendee, Extension>& id,
-    Extension& value) {
+    const Extension& value) {
   return ::protos::SetExtension(::protos::Ptr(message), id, value);
+}
+
+template <typename T, typename Extendee, typename Extension,
+          typename = EnableIfProtosClass<T>>
+absl::Status SetExtension(
+    T* message,
+    const ::protos::internal::ExtensionIdentifier<Extendee, Extension>& id,
+    Extension&& value) {
+  return ::protos::SetExtension(::protos::Ptr(message), id,
+                                std::forward<Extension>(value));
 }
 
 template <typename T, typename Extendee, typename Extension,

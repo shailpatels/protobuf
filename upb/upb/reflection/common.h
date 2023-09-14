@@ -28,7 +28,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// IWYU pragma: private, include "upb/reflection/def.h"
+// IWYU pragma: private, include "upb/upb/reflection/def.h"
 
 // Declarations common to all public def types.
 
@@ -47,7 +47,11 @@
 #include "google/protobuf/descriptor.upb.h"
 // end:github_only
 
-typedef enum { kUpb_Syntax_Proto2 = 2, kUpb_Syntax_Proto3 = 3 } upb_Syntax;
+typedef enum {
+  kUpb_Syntax_Proto2 = 2,
+  kUpb_Syntax_Proto3 = 3,
+  kUpb_Syntax_Editions = 99
+} upb_Syntax;
 
 // Forward declarations for circular references.
 typedef struct upb_DefPool upb_DefPool;

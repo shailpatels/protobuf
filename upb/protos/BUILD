@@ -1,39 +1,21 @@
 # Copyright (c) 2009-2021, Google LLC
 # All rights reserved.
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
-#     * Redistributions of source code must retain the above copyright
-#       notice, this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above copyright
-#       notice, this list of conditions and the following disclaimer in the
-#       documentation and/or other materials provided with the distribution.
-#     * Neither the name of Google LLC nor the
-#       names of its contributors may be used to endorse or promote products
-#       derived from this software without specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-# DISCLAIMED. IN NO EVENT SHALL Google LLC BE LIABLE FOR ANY
-# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# Use of this source code is governed by a BSD-style
+# license that can be found in the LICENSE file or at
+# https://developers.google.com/open-source/licenses/bsd
 
 load(
-    "//bazel:build_defs.bzl",
+    "//upb/bazel:build_defs.bzl",
     "UPB_DEFAULT_CPPOPTS",
 )
 load(
-    "//protos/bazel:upb_cc_proto_library.bzl",
+    "//upb/protos/bazel:upb_cc_proto_library.bzl",
     "upb_cc_proto_library_copts",
 )
 
 # begin:google_only
-# package(default_applicable_licenses = ["//:license"])
+# package(default_applicable_licenses = ["//upb:license"])
 # end:google_only
 
 licenses(["notice"])
@@ -49,13 +31,13 @@ cc_library(
     deps = [
         ":protos",
         ":protos_traits",
-        "//:base",
-        "//:collections",
-        "//:collections_internal",
-        "//:mem",
-        "//:message_copy",
-        "//:mini_table",
-        "//:port",
+        "//upb:base",
+        "//upb:collections",
+        "//upb:collections_internal",
+        "//upb:mem",
+        "//upb:message_copy",
+        "//upb:message_types",
+        "//upb:port",
         "@com_google_absl//absl/base:core_headers",
         "@com_google_absl//absl/strings",
     ],
@@ -73,15 +55,16 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         ":protos_extension_lock",
-        "//:base",
-        "//:mem",
-        "//:message",
-        "//:message_copy",
-        "//:message_internal",
-        "//:message_promote",
-        "//:mini_table",
-        "//:wire",
-        "@com_google_absl//absl/base:core_headers",
+        "//upb:base",
+        "//upb:mem",
+        "//upb:message_accessors_internal",
+        "//upb:message_copy",
+        "//upb:message_internal",
+        "//upb:message_promote",
+        "//upb:message_types",
+        "//upb:mini_table",
+        "//upb:wire",
+        "//upb:wire_types",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/status:statusor",
         "@com_google_absl//absl/strings",
@@ -106,9 +89,9 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         ":protos",
-        "//:mem",
-        "//:message",
-        "//:mini_table",
+        "//upb:mem",
+        "//upb:message",
+        "//upb:mini_table",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/status:statusor",
         "@com_google_absl//absl/strings:str_format",
@@ -122,7 +105,7 @@ cc_library(
     copts = UPB_DEFAULT_CPPOPTS,
     visibility = ["//visibility:public"],
     deps = [
-        "//:message",
+        "//upb:message",
         "@com_google_absl//absl/base:core_headers",
         "@com_google_absl//absl/synchronization",
     ],
@@ -140,8 +123,8 @@ cc_library(
         ":protos",
         ":protos_internal",
         ":repeated_field",
-        "//:mem",
-        "//:message",
+        "//upb:mem",
+        "//upb:message",
     ],
 )
 
@@ -151,9 +134,9 @@ cc_test(
     copts = UPB_DEFAULT_CPPOPTS,
     deps = [
         ":protos_internal",
-        "//:mem",
-        "//protos_generator/tests:test_model_upb_cc_proto",
-        "//protos_generator/tests:test_model_upb_proto",
+        "//upb:mem",
+        "//upb/protos_generator/tests:test_model_upb_cc_proto",
+        "//upb/protos_generator/tests:test_model_upb_proto",
         "@com_google_googletest//:gtest_main",
     ],
 )
@@ -177,10 +160,10 @@ cc_test(
     name = "protos_extension_lock_test",
     srcs = ["protos_extension_lock_test.cc"],
     deps = [
-        "//:mem",
-        "//protos",
-        "//protos:protos_extension_lock",
-        "//protos_generator/tests:test_model_upb_cc_proto",
+        "//upb:mem",
+        "//upb/protos",
+        "//upb/protos:protos_extension_lock",
+        "//upb/protos_generator/tests:test_model_upb_cc_proto",
         "@com_google_absl//absl/hash",
         "@com_google_absl//absl/log:absl_check",
         "@com_google_googletest//:gtest_main",

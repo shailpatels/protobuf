@@ -1,33 +1,10 @@
 // -*- c++ -*-
 // Protocol Buffers - Google's data interchange format
 // Copyright 2008 Google Inc.  All rights reserved.
-// https://developers.google.com/protocol-buffers/
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//     * Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//     * Redistributions in binary form must reproduce the above
-// copyright notice, this list of conditions and the following disclaimer
-// in the documentation and/or other materials provided with the
-// distribution.
-//     * Neither the name of Google Inc. nor the names of its
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file or at
+// https://developers.google.com/open-source/licenses/bsd
 
 // This file defines common macros that are used in protobuf.
 //
@@ -271,6 +248,16 @@ static_assert(PROTOBUF_ABSL_MIN(20230125, 3),
 #error PROTOBUF_VERSION_SUFFIX was previously defined
 #endif
 #define PROTOBUF_VERSION_SUFFIX ""
+
+#ifdef PROTOBUF_MINIMUM_EDITION
+#error PROTOBUF_MINIMUM_EDITION was previously defined
+#endif
+#define PROTOBUF_MINIMUM_EDITION EDITION_2023
+
+#ifdef PROTOBUF_MAXIMUM_EDITION
+#error PROTOBUF_MAXIMUM_EDITION was previously defined
+#endif
+#define PROTOBUF_MAXIMUM_EDITION EDITION_2023
 
 #ifdef PROTOBUF_ALWAYS_INLINE
 #error PROTOBUF_ALWAYS_INLINE was previously defined
@@ -598,6 +585,14 @@ static_assert(PROTOBUF_ABSL_MIN(20230125, 3),
 #error PROTOBUF_FORCE_COPY_DEFAULT_STRING was previously defined
 #endif
 
+// Set (and leave set) PROTOBUF_EXPLICIT_CONSTRUCTORS
+// This flag changes the internal implementation class and its uses from using
+// aggregate initialization to using explicit constructor based initialization.
+// TODO(b/290029568): remove this flag and make the code permanent.
+#ifndef PROTOBUF_EXPLICIT_CONSTRUCTORS
+#define PROTOBUF_EXPLICIT_CONSTRUCTORS
+#endif
+
 #ifdef PROTOBUF_FORCE_ALLOCATION_ON_CONSTRUCTION
 #error PROTOBUF_FORCE_ALLOCATION_ON_CONSTRUCTION was previously defined
 #endif
@@ -849,12 +844,12 @@ static_assert(PROTOBUF_ABSL_MIN(20230125, 3),
     *reinterpret_cast<char *>(addr) = 0; \
   } while (0)
 #else  // PROTOBUF_TSAN
-#define PROTOBUF_TSAN_READ(addr)
-#define PROTOBUF_TSAN_WRITE(addr)
+#define PROTOBUF_TSAN_READ(addr) (void)0
+#define PROTOBUF_TSAN_WRITE(addr) (void)0
 #endif  // PROTOBUF_TSAN
 
 #ifdef PROTOBUF_TSAN
-#define PROTOBUF_TSAN_DECLARE_MEMBER ::uint32_t _tsan_detect_race = 0
+#define PROTOBUF_TSAN_DECLARE_MEMBER ::uint32_t _tsan_detect_race = 0;
 #else
 #define PROTOBUF_TSAN_DECLARE_MEMBER
 #endif
@@ -1072,6 +1067,7 @@ static_assert(PROTOBUF_ABSL_MIN(20230125, 3),
 // for (int i = 0; i < file_->public_dependency_count(); ++i)
 //   for (int i = 0; i < public_dep->message_type_count(); ++i)
 #pragma clang diagnostic ignored "-Wshadow"
+#pragma clang diagnostic ignored "-Wextra-semi"
 #endif
 #ifdef __GNUC__
 #pragma GCC diagnostic push

@@ -1,32 +1,9 @@
 // Protocol Buffers - Google's data interchange format
 // Copyright 2008 Google Inc.  All rights reserved.
-// https://developers.google.com/protocol-buffers/
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//     * Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//     * Redistributions in binary form must reproduce the above
-// copyright notice, this list of conditions and the following disclaimer
-// in the documentation and/or other materials provided with the
-// distribution.
-//     * Neither the name of Google Inc. nor the names of its
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file or at
+// https://developers.google.com/open-source/licenses/bsd
 
 // Author: kenton@google.com (Kenton Varda)
 //  Based on original Protocol Buffers design by
@@ -1117,8 +1094,8 @@ const FeatureSetDefaults& GetCppFeatureSetDefaults() {
   static const FeatureSetDefaults* default_spec = [] {
     auto default_spec = FeatureResolver::CompileDefaults(
         FeatureSet::descriptor(),
-        // TODO(b/297261063) Move this range to a central location.
-        {pb::CppFeatures::descriptor()->file()->extension(0)}, "2023", "2023");
+        {pb::CppFeatures::descriptor()->file()->extension(0)},
+        PROTOBUF_MINIMUM_EDITION, PROTOBUF_MAXIMUM_EDITION);
     ABSL_CHECK(default_spec.ok()) << default_spec.status();
     return new FeatureSetDefaults(std::move(default_spec).value());
   }();
@@ -2818,7 +2795,7 @@ void FileDescriptor::CopyHeadingTo(FileDescriptorProto* proto) const {
     proto->set_syntax(FileDescriptorLegacy::SyntaxName(syntax));
   }
   if (syntax == FileDescriptorLegacy::Syntax::SYNTAX_EDITIONS) {
-    proto->set_edition(edition());
+    proto->set_edition_enum(edition());
   }
 
   if (&options() != &FileOptions::default_instance()) {
@@ -3260,8 +3237,7 @@ std::string FileDescriptor::DebugStringWithOptions(
     if (FileDescriptorLegacy(this).syntax() ==
         FileDescriptorLegacy::SYNTAX_EDITIONS) {
       absl::SubstituteAndAppend(&contents, "edition = \"$0\";\n\n", edition());
-    } else  // NOLINT(readability/braces)
-    {
+    } else {
       absl::SubstituteAndAppend(&contents, "syntax = \"$0\";\n\n",
                                 FileDescriptorLegacy::SyntaxName(
                                     FileDescriptorLegacy(this).syntax()));
@@ -5595,10 +5571,9 @@ static void PlanAllocationSize(const FileDescriptorProto& proto,
                                internal::FlatAllocator& alloc) {
   alloc.PlanArray<FileDescriptor>(1);
   alloc.PlanArray<FileDescriptorTables>(1);
-  alloc.PlanArray<std::string>(
-      2 + (proto.has_edition() ? 1 : 0));  // name + package
+  alloc.PlanArray<std::string>(2);  // name + package
   if (proto.has_options()) alloc.PlanArray<FileOptions>(1);
-  if (proto.has_edition()) {
+  if (proto.has_edition_enum()) {
     alloc.PlanArray<FeatureSet>(1);
     if (HasFeatures(proto.options())) {
       alloc.PlanArray<FeatureSet>(1);
@@ -5705,24 +5680,14 @@ FileDescriptor* DescriptorBuilder::BuildFileImpl(
   FileDescriptor* result = alloc.AllocateArray<FileDescriptor>(1);
   file_ = result;
 
-  if (proto.has_edition()) {
-    Symbol symbol = FindSymbolNotEnforcingDeps("google.protobuf.FeatureSet");
-    const Descriptor* descriptor = symbol.descriptor();
-    if (descriptor == nullptr) {
-      // descriptor.proto is not in the pool. This means no custom features are
-      // used so we are safe to proceed with the compiled FeatureSet message
-      // type.
-      descriptor = FeatureSet::descriptor();
-    }
-    ABSL_CHECK(descriptor);
-
+  if (proto.has_edition_enum()) {
     const FeatureSetDefaults& defaults =
         pool_->feature_set_defaults_spec_ == nullptr
             ? GetCppFeatureSetDefaults()
             : *pool_->feature_set_defaults_spec_;
 
     absl::StatusOr<FeatureResolver> feature_resolver =
-        FeatureResolver::Create(proto.edition(), defaults);
+        FeatureResolver::Create(proto.edition_enum(), defaults);
     if (!feature_resolver.ok()) {
       AddError(
           proto.name(), proto, DescriptorPool::ErrorCollector::EDITIONS,
@@ -5765,10 +5730,10 @@ FileDescriptor* DescriptorBuilder::BuildFileImpl(
       return absl::StrCat("Unrecognized syntax: ", proto.syntax());
     });
   }
-  if (proto.has_edition()) {
-    file_->edition_ = alloc.AllocateStrings(proto.edition());
+  if (proto.has_edition_enum()) {
+    file_->edition_ = proto.edition_enum();
   } else {
-    file_->edition_ = nullptr;
+    file_->edition_ = Edition::EDITION_UNKNOWN;
   }
 
   result->name_ = alloc.AllocateStrings(proto.name());
@@ -9578,15 +9543,14 @@ bool IsLazilyInitializedFile(absl::string_view filename) {
 }  // namespace cpp
 }  // namespace internal
 
-absl::string_view FileDescriptor::edition() const {
-  // ASLR will help give this a random value across processes.
-  static const void* kAntiHyrumText = &kAntiHyrumText;
-  absl::string_view anti_hyrum_string(
-      reinterpret_cast<const char*>(kAntiHyrumText),
-      (reinterpret_cast<size_t>(kAntiHyrumText) >> 3) % sizeof(void*));
+Edition FileDescriptor::edition() const { return edition_; }
 
-  return edition_ == nullptr ? anti_hyrum_string : *edition_;
+namespace internal {
+absl::string_view ShortEditionName(Edition edition) {
+  return absl::StripPrefix(Edition_Name(edition), "EDITION_");
 }
+}  // namespace internal
+
 }  // namespace protobuf
 }  // namespace google
 

@@ -28,48 +28,23 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef UPB_MINI_TABLE_INTERNAL_MAP_ENTRY_DATA_H_
-#define UPB_MINI_TABLE_INTERNAL_MAP_ENTRY_DATA_H_
+#ifndef UPB_WIRE_INTERNAL_CONSTANTS_H_
+#define UPB_WIRE_INTERNAL_CONSTANTS_H_
 
-#include <stdint.h>
+#define kUpb_WireFormat_DefaultDepthLimit 100
 
-#include "upb/base/string_view.h"
-#include "upb/hash/common.h"
+// MessageSet wire format is:
+//   message MessageSet {
+//     repeated group Item = 1 {
+//       required int32 type_id = 2;
+//       required bytes message = 3;
+//     }
+//   }
 
-// Map entries aren't actually stored for map fields, they are only used during
-// parsing. For parsing, it helps a lot if all map entry messages have the same
-// layout. The layout code in mini_table/decode.c will ensure that all map
-// entries have this layout.
-//
-// Note that users can and do create map entries directly, which will also use
-// this layout.
-//
-// NOTE: sync with mini_table/decode.c.
-typedef struct {
-  // We only need 2 hasbits max, but due to alignment we'll use 8 bytes here,
-  // and the uint64_t helps make this clear.
-  uint64_t hasbits;
-  union {
-    upb_StringView str;  // For str/bytes.
-    upb_value val;       // For all other types.
-  } k;
-  union {
-    upb_StringView str;  // For str/bytes.
-    upb_value val;       // For all other types.
-  } v;
-} upb_MapEntryData;
+enum {
+  kUpb_MsgSet_Item = 1,
+  kUpb_MsgSet_TypeId = 2,
+  kUpb_MsgSet_Message = 3,
+};
 
-typedef struct {
-  // LINT.IfChange(internal_layout)
-  union {
-    void* internal_data;
-
-    // Force 8-byte alignment, since the data members may contain members that
-    // require 8-byte alignment.
-    double d;
-  };
-  // LINT.ThenChange(//depot/google3/third_party/upb/upb/message/internal/message.h:internal_layout)
-  upb_MapEntryData data;
-} upb_MapEntry;
-
-#endif  // UPB_MINI_TABLE_INTERNAL_MAP_ENTRY_DATA_H_
+#endif /* UPB_WIRE_INTERNAL_CONSTANTS_H_ */

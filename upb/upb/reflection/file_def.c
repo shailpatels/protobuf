@@ -28,23 +28,24 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include "upb/reflection/internal/file_def.h"
+#include "upb/upb/reflection/internal/file_def.h"
 
-#include "upb/reflection/def_pool.h"
-#include "upb/reflection/internal/def_builder.h"
-#include "upb/reflection/internal/enum_def.h"
-#include "upb/reflection/internal/field_def.h"
-#include "upb/reflection/internal/message_def.h"
-#include "upb/reflection/internal/service_def.h"
+#include "upb/upb/reflection/def_pool.h"
+#include "upb/upb/reflection/internal/def_builder.h"
+#include "upb/upb/reflection/internal/enum_def.h"
+#include "upb/upb/reflection/internal/field_def.h"
+#include "upb/upb/reflection/internal/message_def.h"
+#include "upb/upb/reflection/internal/service_def.h"
+#include "upb/upb/reflection/internal/strdup2.h"
 
 // Must be last.
-#include "upb/port/def.inc"
+#include "upb/upb/port/def.inc"
 
 struct upb_FileDef {
   const UPB_DESC(FileOptions) * opts;
   const char* name;
   const char* package;
-  const char* edition;
+  UPB_DESC(Edition) edition;
 
   const upb_FileDef** deps;
   const int32_t* public_deps;
@@ -81,8 +82,8 @@ const char* upb_FileDef_Package(const upb_FileDef* f) {
   return f->package ? f->package : "";
 }
 
-const char* upb_FileDef_Edition(const upb_FileDef* f) {
-  return f->edition ? f->edition : "";
+UPB_DESC(Edition) upb_FileDef_Edition(const upb_FileDef* f) {
+  return f->edition;
 }
 
 const char* _upb_FileDef_RawPackage(const upb_FileDef* f) { return f->package; }
@@ -247,17 +248,8 @@ void _upb_FileDef_Create(upb_DefBuilder* ctx,
     file->package = NULL;
   }
 
-  upb_StringView edition = UPB_DESC(FileDescriptorProto_edition)(file_proto);
-
-  if (edition.size == 0) {
-    file->edition = NULL;
-  } else {
-    // TODO(b/267770604): How should we validate this?
-    file->edition = strviewdup(ctx, edition);
-    if (strlen(file->edition) != edition.size) {
-      _upb_DefBuilder_Errf(ctx, "Edition name contained embedded NULL");
-    }
-  }
+  // TODO(b/267770604): How should we validate this?
+  file->edition = UPB_DESC(FileDescriptorProto_edition_enum)(file_proto);
 
   if (UPB_DESC(FileDescriptorProto_has_syntax)(file_proto)) {
     upb_StringView syntax = UPB_DESC(FileDescriptorProto_syntax)(file_proto);
@@ -266,6 +258,8 @@ void _upb_FileDef_Create(upb_DefBuilder* ctx,
       file->syntax = kUpb_Syntax_Proto2;
     } else if (streql_view(syntax, "proto3")) {
       file->syntax = kUpb_Syntax_Proto3;
+    } else if (streql_view(syntax, "editions")) {
+      file->syntax = kUpb_Syntax_Editions;
     } else {
       _upb_DefBuilder_Errf(ctx, "Invalid syntax '" UPB_STRINGVIEW_FORMAT "'",
                            UPB_STRINGVIEW_ARGS(syntax));

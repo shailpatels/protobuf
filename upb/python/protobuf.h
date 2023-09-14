@@ -33,9 +33,9 @@
 
 #include <stdbool.h>
 
-#include "python/descriptor.h"
-#include "python/python_api.h"
-#include "upb/hash/int_table.h"
+#include "upb/python/descriptor.h"
+#include "upb/python/python_api.h"
+#include "upb/upb/hash/int_table.h"
 
 // begin:github_only
 #define PYUPB_PROTOBUF_PUBLIC_PACKAGE "google.protobuf"
@@ -231,4 +231,11 @@ static inline PyObject* PyUpb_NewRef(PyObject* obj) {
 const char* PyUpb_GetStrData(PyObject* obj);
 const char* PyUpb_VerifyStrData(PyObject* obj);
 
+// For an expression like:
+//    foo[index]
+//
+// Converts `index` to an effective i/count/step, for a repeated field
+// or descriptor sequence of size 'size'.
+bool PyUpb_IndexToRange(PyObject* index, Py_ssize_t size, Py_ssize_t* i,
+                        Py_ssize_t* count, Py_ssize_t* step);
 #endif  // PYUPB_PROTOBUF_H__

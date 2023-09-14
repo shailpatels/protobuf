@@ -31,10 +31,10 @@
 #ifndef UPB_JSON_ENCODE_H_
 #define UPB_JSON_ENCODE_H_
 
-#include "upb/reflection/def.h"
+#include "upb/upb/reflection/def.h"
 
 // Must be last.
-#include "upb/port/def.inc"
+#include "upb/upb/port/def.inc"
 
 #ifdef __cplusplus
 extern "C" {
@@ -53,8 +53,8 @@ enum {
 };
 
 /* Encodes the given |msg| to JSON format.  The message's reflection is given in
- * |m|.  The symtab in |symtab| is used to find extensions (if NULL, extensions
- * will not be printed).
+ * |m|.  The DefPool in |ext_pool| is used to find extensions (if NULL,
+ * extensions will not be printed).
  *
  * Output is placed in the given buffer, and always NULL-terminated.  The output
  * size (excluding NULL) is returned.  This means that a return value >= |size|
@@ -68,6 +68,6 @@ UPB_API size_t upb_JsonEncode(const upb_Message* msg, const upb_MessageDef* m,
 } /* extern "C" */
 #endif
 
-#include "upb/port/undef.inc"
+#include "upb/upb/port/undef.inc"
 
 #endif /* UPB_JSONENCODE_H_ */

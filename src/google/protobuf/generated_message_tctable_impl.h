@@ -1,32 +1,9 @@
 // Protocol Buffers - Google's data interchange format
 // Copyright 2008 Google Inc.  All rights reserved.
-// https://developers.google.com/protocol-buffers/
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//     * Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//     * Redistributions in binary form must reproduce the above
-// copyright notice, this list of conditions and the following disclaimer
-// in the documentation and/or other materials provided with the
-// distribution.
-//     * Neither the name of Google Inc. nor the names of its
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file or at
+// https://developers.google.com/open-source/licenses/bsd
 
 #ifndef GOOGLE_PROTOBUF_GENERATED_MESSAGE_TCTABLE_IMPL_H__
 #define GOOGLE_PROTOBUF_GENERATED_MESSAGE_TCTABLE_IMPL_H__
@@ -37,6 +14,7 @@
 #include <type_traits>
 #include <utility>
 
+#include "absl/log/absl_log.h"
 #include "google/protobuf/extension_set.h"
 #include "google/protobuf/generated_message_tctable_decl.h"
 #include "google/protobuf/map.h"
@@ -379,7 +357,7 @@ inline void AlignFail(std::integral_constant<size_t, 1>,
   PROTOBUF_TC_PARSE_FUNCTION_LIST_END_GROUP()
 
 #define PROTOBUF_TC_PARSE_FUNCTION_X(value) k##value,
-enum class TcParseFunction { kNone, PROTOBUF_TC_PARSE_FUNCTION_LIST };
+enum class TcParseFunction : uint8_t { kNone, PROTOBUF_TC_PARSE_FUNCTION_LIST };
 #undef PROTOBUF_TC_PARSE_FUNCTION_X
 
 // TcParser implements most of the parsing logic for tailcall tables.
@@ -406,10 +384,6 @@ class PROTOBUF_EXPORT TcParser final {
   //    expect only the tag in `data`. In addition, if a null `ptr` is passed,
   //    the function is used as a way to get a UnknownFieldOps vtable, returned
   //    via the `const char*` return type. See `GetUnknownFieldOps()`
-
-  static bool MustFallbackToGeneric(PROTOBUF_TC_PARAM_NO_DATA_DECL) {
-    return ptr == nullptr;
-  }
 
   static const char* GenericFallback(PROTOBUF_TC_PARAM_DECL);
   static const char* GenericFallbackLite(PROTOBUF_TC_PARAM_DECL);
@@ -580,6 +554,9 @@ class PROTOBUF_EXPORT TcParser final {
   static const char* FastMlS1(PROTOBUF_TC_PARAM_DECL);
   static const char* FastMlS2(PROTOBUF_TC_PARAM_DECL);
 
+  // NOTE: Do not dedup RefAt by having one call the other with a const_cast. It
+  // causes ICEs of gcc 7.5.
+  // https://github.com/protocolbuffers/protobuf/issues/13715
   template <typename T>
   static inline T& RefAt(void* x, size_t offset) {
     T* target = reinterpret_cast<T*>(static_cast<char*>(x) + offset);
@@ -599,7 +576,20 @@ class PROTOBUF_EXPORT TcParser final {
 
   template <typename T>
   static inline const T& RefAt(const void* x, size_t offset) {
-    return RefAt<T>(const_cast<void*>(x), offset);
+    const T* target =
+        reinterpret_cast<const T*>(static_cast<const char*>(x) + offset);
+#if !defined(NDEBUG) && !(defined(_MSC_VER) && defined(_M_IX86))
+    // Check the alignment in debug mode, except in 32-bit msvc because it does
+    // not respect the alignment as expressed by `alignof(T)`
+    if (PROTOBUF_PREDICT_FALSE(
+            reinterpret_cast<uintptr_t>(target) % alignof(T) != 0)) {
+      AlignFail(std::integral_constant<size_t, alignof(T)>(),
+                reinterpret_cast<uintptr_t>(target));
+      // Explicit abort to let compilers know this code-path does not return
+      abort();
+    }
+#endif
+    return *target;
   }
 
   template <typename T, bool is_split>

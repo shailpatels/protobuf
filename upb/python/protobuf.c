@@ -28,16 +28,18 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include "python/protobuf.h"
+#include "upb/python/protobuf.h"
 
-#include "python/descriptor.h"
-#include "python/descriptor_containers.h"
-#include "python/descriptor_pool.h"
-#include "python/extension_dict.h"
-#include "python/map.h"
-#include "python/message.h"
-#include "python/repeated.h"
-#include "python/unknown_fields.h"
+#include "upb/python/descriptor.h"
+#include "upb/python/descriptor_containers.h"
+#include "upb/python/descriptor_pool.h"
+#include "upb/python/extension_dict.h"
+#include "upb/python/map.h"
+#include "upb/python/message.h"
+#include "upb/python/repeated.h"
+#include "upb/python/unknown_fields.h"
+
+static upb_Arena* PyUpb_NewArena(void);
 
 static void PyUpb_ModuleDealloc(void* module) {
   PyUpb_ModuleState* s = PyModule_GetState(module);
@@ -125,7 +127,7 @@ struct PyUpb_WeakMap {
 };
 
 PyUpb_WeakMap* PyUpb_WeakMap_New(void) {
-  upb_Arena* arena = upb_Arena_New();
+  upb_Arena* arena = PyUpb_NewArena();
   PyUpb_WeakMap* map = upb_Arena_Malloc(arena, sizeof(*map));
   map->arena = arena;
   upb_inttable_init(&map->table, map->arena);
@@ -224,10 +226,54 @@ typedef struct {
   upb_Arena* arena;
 } PyUpb_Arena;
 
+// begin:google_only
+// static upb_alloc* global_alloc = &upb_alloc_global;
+// end:google_only
+
+// begin:github_only
+#ifdef __GLIBC__
+#include <malloc.h>  // malloc_trim()
+#endif
+
+// A special allocator that calls malloc_trim() periodically to release
+// memory to the OS.  Without this call, we appear to leak memory, at least
+// as measured in RSS.
+//
+// We opt not to use this instead of PyMalloc (which would also solve the
+// problem) because the latter requires the GIL to be held.  This would make
+// our messages unsafe to share with other languages that could free at
+// unpredictable
+// times.
+static void* upb_trim_allocfunc(upb_alloc* alloc, void* ptr, size_t oldsize,
+                                size_t size) {
+  (void)alloc;
+  (void)oldsize;
+  if (size == 0) {
+    free(ptr);
+#ifdef __GLIBC__
+    static int count = 0;
+    if (++count == 10000) {
+      malloc_trim(0);
+      count = 0;
+    }
+#endif
+    return NULL;
+  } else {
+    return realloc(ptr, size);
+  }
+}
+static upb_alloc trim_alloc = {&upb_trim_allocfunc};
+static const upb_alloc* global_alloc = &trim_alloc;
+// end:github_only
+
+static upb_Arena* PyUpb_NewArena(void) {
+  return upb_Arena_Init(NULL, 0, global_alloc);
+}
+
 PyObject* PyUpb_Arena_New(void) {
   PyUpb_ModuleState* state = PyUpb_ModuleState_Get();
   PyUpb_Arena* arena = (void*)PyType_GenericAlloc(state->arena_type, 0);
-  arena->arena = upb_Arena_New();
+  arena->arena = PyUpb_NewArena();
   return &arena->ob_base;
 }
 
@@ -323,6 +369,34 @@ PyObject* PyUpb_Forbidden_New(PyObject* cls, PyObject* args, PyObject* kwds) {
                "Objects of type %U may not be created directly.", name);
   Py_XDECREF(name);
   return NULL;
+}
+
+bool PyUpb_IndexToRange(PyObject* index, Py_ssize_t size, Py_ssize_t* i,
+                        Py_ssize_t* count, Py_ssize_t* step) {
+  assert(i && count && step);
+  if (PySlice_Check(index)) {
+    Py_ssize_t start, stop;
+    if (PySlice_Unpack(index, &start, &stop, step) < 0) return false;
+    *count = PySlice_AdjustIndices(size, &start, &stop, *step);
+    *i = start;
+  } else {
+    *i = PyNumber_AsSsize_t(index, PyExc_IndexError);
+
+    if (*i == -1 && PyErr_Occurred()) {
+      PyErr_SetString(PyExc_TypeError, "list indices must be integers");
+      return false;
+    }
+
+    if (*i < 0) *i += size;
+    *step = 0;
+    *count = 1;
+
+    if (*i < 0 || size <= *i) {
+      PyErr_Format(PyExc_IndexError, "list index out of range");
+      return false;
+    }
+  }
+  return true;
 }
 
 // -----------------------------------------------------------------------------

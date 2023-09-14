@@ -1,32 +1,9 @@
 // Protocol Buffers - Google's data interchange format
 // Copyright 2008 Google Inc.  All rights reserved.
-// https://developers.google.com/protocol-buffers/
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-//     * Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//     * Redistributions in binary form must reproduce the above
-// copyright notice, this list of conditions and the following disclaimer
-// in the documentation and/or other materials provided with the
-// distribution.
-//     * Neither the name of Google Inc. nor the names of its
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file or at
+// https://developers.google.com/open-source/licenses/bsd
 
 // Author: kenton@google.com (Kenton Varda)
 //  Based on original Protocol Buffers design by
@@ -172,6 +149,13 @@ class PROTOBUF_EXPORT RepeatedPtrFieldBase {
   template <typename Handler>
   using Value = typename Handler::Type;
 
+  // We use the same Handler for all Message types to deduplicate generated
+  // code.
+  template <typename Handler>
+  using CommonHandler = typename std::conditional<
+      std::is_base_of<MessageLite, Value<Handler>>::value,
+      internal::GenericTypeHandler<MessageLite>, Handler>::type;
+
   static constexpr int kSSOCapacity = 1;
 
  protected:
@@ -253,27 +237,24 @@ class PROTOBUF_EXPORT RepeatedPtrFieldBase {
   void Delete(int index) {
     ABSL_DCHECK_GE(index, 0);
     ABSL_DCHECK_LT(index, current_size_);
-    Delete<TypeHandler>(element_at(index), arena_);
+    using H = CommonHandler<TypeHandler>;
+    Delete<H>(element_at(index), arena_);
   }
 
   // Must be called from destructor.
   template <typename TypeHandler>
   void Destroy() {
+    using H = CommonHandler<TypeHandler>;
     if (arena_ != nullptr) return;
-
-    if (using_sso()) {
-      if (tagged_rep_or_elem_ == nullptr) return;
-      Delete<TypeHandler>(tagged_rep_or_elem_, nullptr);
-      return;
-    }
-
-    Rep* r = rep();
-    int n = r->allocated_size;
-    void* const* elems = r->elements;
+    int n = allocated_size();
+    void** elems = elements();
     for (int i = 0; i < n; i++) {
-      Delete<TypeHandler>(elems[i], nullptr);
+      Delete<H>(elems[i], nullptr);
     }
-    internal::SizedDelete(r, total_size_ * sizeof(elems[0]) + kRepHeaderSize);
+    if (!using_sso()) {
+      internal::SizedDelete(rep(),
+                            total_size_ * sizeof(elems[0]) + kRepHeaderSize);
+    }
   }
 
   bool NeedsDestroy() const {
@@ -304,7 +285,8 @@ class PROTOBUF_EXPORT RepeatedPtrFieldBase {
     const int n = current_size_;
     ABSL_DCHECK_GE(n, 0);
     if (n > 0) {
-      ClearNonEmpty<TypeHandler>();
+      using H = CommonHandler<TypeHandler>;
+      ClearNonEmpty<H>();
     }
   }
 
@@ -318,11 +300,11 @@ class PROTOBUF_EXPORT RepeatedPtrFieldBase {
     // calls the object-allocate and merge handlers.
     ABSL_DCHECK_NE(&other, this);
     if (other.current_size_ == 0) return;
-    MergeFromInternal(other,
-                      &RepeatedPtrFieldBase::MergeFromInnerLoop<TypeHandler>);
+    using H = CommonHandler<TypeHandler>;
+    MergeFromInternal(other, &RepeatedPtrFieldBase::MergeFromInnerLoop<H>);
   }
 
-  inline void InternalSwap(RepeatedPtrFieldBase* rhs) {
+  inline void InternalSwap(RepeatedPtrFieldBase* PROTOBUF_RESTRICT rhs) {
     ABSL_DCHECK(this != rhs);
 
     // Swap all fields at once.
@@ -355,7 +337,8 @@ class PROTOBUF_EXPORT RepeatedPtrFieldBase {
   void RemoveLast() {
     ABSL_DCHECK_GT(current_size_, 0);
     ExchangeCurrentSize(current_size_ - 1);
-    TypeHandler::Clear(cast<TypeHandler>(element_at(current_size_)));
+    using H = CommonHandler<TypeHandler>;
+    H::Clear(cast<H>(element_at(current_size_)));
   }
 
   template <typename TypeHandler>
@@ -371,9 +354,10 @@ class PROTOBUF_EXPORT RepeatedPtrFieldBase {
 
   template <typename TypeHandler>
   static inline Value<TypeHandler>* copy(Value<TypeHandler>* value) {
-    auto* new_value = TypeHandler::NewFromPrototype(value, nullptr);
-    TypeHandler::Merge(*value, new_value);
-    return new_value;
+    using H = CommonHandler<TypeHandler>;
+    auto* new_value = H::NewFromPrototype(value, nullptr);
+    H::Merge(*value, new_value);
+    return cast<TypeHandler>(new_value);
   }
 
   // Used for constructing iterators.
@@ -415,7 +399,7 @@ class PROTOBUF_EXPORT RepeatedPtrFieldBase {
   }
 
   template <typename TypeHandler>
-  size_t SpaceUsedExcludingSelfLong() const {
+  PROTOBUF_NOINLINE size_t SpaceUsedExcludingSelfLong() const {
     size_t allocated_bytes =
         using_sso()
             ? 0
@@ -460,7 +444,8 @@ class PROTOBUF_EXPORT RepeatedPtrFieldBase {
       // cleared objects awaiting reuse.  We don't want to grow the array in
       // this case because otherwise a loop calling AddAllocated() followed by
       // Clear() would leak memory.
-      Delete<TypeHandler>(element_at(current_size_), arena_);
+      using H = CommonHandler<TypeHandler>;
+      Delete<H>(element_at(current_size_), arena_);
     } else if (current_size_ < allocated_size()) {
       // We have some cleared objects.  We don't care about their order, so we
       // can just move the first one to the end to make space.
@@ -591,8 +576,9 @@ class PROTOBUF_EXPORT RepeatedPtrFieldBase {
       my_arena->Own(value);
     } else if (my_arena != value_arena) {
       auto* new_value = TypeHandler::NewFromPrototype(value, my_arena);
-      TypeHandler::Merge(*value, new_value);
-      TypeHandler::Delete(value, value_arena);
+      using H = CommonHandler<TypeHandler>;
+      H::Merge(*value, new_value);
+      H::Delete(value, value_arena);
       value = new_value;
     }
 
@@ -764,9 +750,8 @@ class PROTOBUF_EXPORT RepeatedPtrFieldBase {
     const int n = current_size_;
     void* const* elems = elements();
     int i = 0;
-    ABSL_DCHECK_GT(
-        n,
-        0);  // do/while loop to avoid initial test because we know n > 0
+    ABSL_DCHECK_GT(n, 0);
+    // do/while loop to avoid initial test because we know n > 0
     do {
       TypeHandler::Clear(cast<TypeHandler>(elems[i++]));
     } while (i < n);
@@ -843,6 +828,8 @@ class PROTOBUF_EXPORT RepeatedPtrFieldBase {
   void* tagged_rep_or_elem_;
 };
 
+void InternalOutOfLineDeleteMessageLite(MessageLite* message);
+
 template <typename GenericType>
 class GenericTypeHandler {
  public:
@@ -860,9 +847,18 @@ class GenericTypeHandler {
     return New(arena);
   }
   static inline void Delete(GenericType* value, Arena* arena) {
-    if (arena == nullptr) {
+    if (arena != nullptr) return;
+#ifdef __cpp_if_constexpr
+    if constexpr (std::is_base_of<MessageLite, GenericType>::value) {
+      // Using virtual destructor to reduce generated code size that would have
+      // happened otherwise due to inlined `~GenericType`.
+      InternalOutOfLineDeleteMessageLite(value);
+    } else {
       delete value;
     }
+#else
+    delete value;
+#endif
   }
   static inline Arena* GetOwningArena(GenericType* value) {
     return Arena::InternalGetOwningArena(value);
@@ -878,7 +874,8 @@ class GenericTypeHandler {
 // NewFromPrototypeHelper() is not defined inline here, as we will need to do a
 // virtual function dispatch anyways to go from Message* to call New/Merge. (The
 // additional helper is needed as a workaround for MSVC.)
-MessageLite* NewFromPrototypeHelper(const MessageLite* prototype, Arena* arena);
+PROTOBUF_EXPORT MessageLite* NewFromPrototypeHelper(
+    const MessageLite* prototype, Arena* arena);
 
 template <>
 inline MessageLite* GenericTypeHandler<MessageLite>::NewFromPrototype(
@@ -897,8 +894,8 @@ PROTOBUF_NOINLINE inline void GenericTypeHandler<GenericType>::Merge(
   to->MergeFrom(from);
 }
 template <>
-void GenericTypeHandler<MessageLite>::Merge(const MessageLite& from,
-                                            MessageLite* to);
+PROTOBUF_EXPORT void GenericTypeHandler<MessageLite>::Merge(
+    const MessageLite& from, MessageLite* to);
 
 template <>
 inline void GenericTypeHandler<std::string>::Clear(std::string* value) {
@@ -1026,7 +1023,7 @@ class RepeatedPtrField final : private internal::RepeatedPtrFieldBase {
 
   // Unlike std::vector, adding an element to a RepeatedPtrField doesn't always
   // make a new element; it might re-use an element left over from when the
-  // field was Clear()'d or reize()'d smaller.  For this reason, Add() is the
+  // field was Clear()'d or resize()'d smaller.  For this reason, Add() is the
   // fastest API for adding a new element.
   pointer Add() ABSL_ATTRIBUTE_LIFETIME_BOUND;
 
@@ -1264,7 +1261,7 @@ class RepeatedPtrField final : private internal::RepeatedPtrFieldBase {
   // For internal use only.
   //
   // This is public due to it being called by generated code.
-  void InternalSwap(RepeatedPtrField* other) {
+  void InternalSwap(RepeatedPtrField* PROTOBUF_RESTRICT other) {
     internal::RepeatedPtrFieldBase::InternalSwap(other);
   }
 
@@ -1654,7 +1651,13 @@ inline Arena* RepeatedPtrField<Element>::GetOwningArena() const {
 
 template <typename Element>
 inline size_t RepeatedPtrField<Element>::SpaceUsedExcludingSelfLong() const {
-  return RepeatedPtrFieldBase::SpaceUsedExcludingSelfLong<TypeHandler>();
+  // `google::protobuf::Message` has a virtual method `SpaceUsedLong`, hence we can
+  // instantiate just one function for all protobuf messages.
+  // Note: std::is_base_of requires that `Element` is a concrete class.
+  using H = typename std::conditional<std::is_base_of<Message, Element>::value,
+                                      internal::GenericTypeHandler<Message>,
+                                      TypeHandler>::type;
+  return RepeatedPtrFieldBase::SpaceUsedExcludingSelfLong<H>();
 }
 
 template <typename Element>

@@ -1,6 +1,6 @@
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
-load("//bazel:python_downloads.bzl", "python_nuget_package", "python_source_archive")
+load("//upb/bazel:python_downloads.bzl", "python_nuget_package", "python_source_archive")
 
 def _github_archive(repo, commit, **kwargs):
     repo_name = repo.split("/")[-1]
@@ -15,17 +15,16 @@ def upb_deps():
         _github_archive,
         name = "com_google_absl",
         repo = "https://github.com/abseil/abseil-cpp",
-        commit = "c2435f8342c2d0ed8101cb43adfd605fdc52dca2",  # Abseil LTS 20230125.3
-        sha256 = "ea1d31db00eb37e607bfda17ffac09064670ddf05da067944c4766f517876390",
+        commit = "29bf8085f3bf17b84d30e34b3d7ff8248fda404e",  # Abseil LTS 20230802
+        sha256 = "f4871f2982e29496f4ddd598ccd5a87fea42f23c49b5e5eb459d57eab91df9d9",
     )
 
     maybe(
         _github_archive,
         name = "com_google_protobuf",
         repo = "https://github.com/protocolbuffers/protobuf",
-        commit = "22e845e279bd79ad013bff4b79660b8c8b72d935",
-        sha256 = "276215041e767973f274299783b5d7b7de1a3c55628b9890bd9eb064dfa5daaf",
-        patches = ["@upb//bazel:protobuf.patch"],
+        commit = "f85a338d79f05938d1725fba3b2c603a8d06462e",
+        sha256 = "cd28ae63e40a146ec1a2d41e96f53e637aaa5d6c746e7120d013aafc65092882",
     )
 
     maybe(

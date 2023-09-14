@@ -22,6 +22,7 @@ def _get_suffix(limited_api, python_version, cpu):
             python_version += "m"
         abis = {
             "darwin_arm64": "darwin",
+            "darwin_x86_64": "darwin",
             "darwin": "darwin",
             "osx-x86_64": "darwin",
             "osx-aarch_64": "darwin",
@@ -120,8 +121,8 @@ py_dist_module = rule(
             mandatory = True,
             cfg = _py_multiarch_transition,
         ),
-        "_limited_api": attr.label(default = "//python:limited_api"),
-        "_python_version": attr.label(default = "//python:python_version"),
+        "_limited_api": attr.label(default = "//upb/python:limited_api"),
+        "_python_version": attr.label(default = "//upb/python:python_version"),
         "_allowlist_function_transition": attr.label(
             default = "@bazel_tools//tools/allowlists/function_transition_allowlist",
         ),
@@ -141,16 +142,16 @@ def _py_dist_transition_impl(settings, attr):
     for cpu, version in attr.limited_api_wheels.items():
         transitions.append({
             "//command_line_option:cpu": cpu,
-            "//python:python_version": version,
-            "//python:limited_api": True,
+            "//upb/python:python_version": version,
+            "//upb/python:limited_api": True,
         })
 
     for version in attr.full_api_versions:
         for cpu in attr.full_api_cpus:
             transitions.append({
                 "//command_line_option:cpu": cpu,
-                "//python:python_version": version,
-                "//python:limited_api": False,
+                "//upb/python:python_version": version,
+                "//upb/python:limited_api": False,
             })
 
     return transitions
@@ -160,8 +161,8 @@ _py_dist_transition = transition(
     inputs = [],
     outputs = [
         "//command_line_option:cpu",
-        "//python:python_version",
-        "//python:limited_api",
+        "//upb/python:python_version",
+        "//upb/python:limited_api",
     ],
 )
 

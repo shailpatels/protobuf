@@ -8,17 +8,17 @@
  *
  * The correct usage is:
  *
- *   #include "upb/foobar.h"
- *   #include "upb/baz.h"
+ *   #include "upb/upb/foobar.h"
+ *   #include "upb/upb/baz.h"
  *
  *   // MUST be last included header.
- *   #include "upb/port/def.inc"
+ *   #include "upb/upb/port/def.inc"
  *
  *   // Code for this file.
  *   // <...>
  *
  *   // Can be omitted for .c files, required for .h.
- *   #include "upb/port/undef.inc"
+ *   #include "upb/upb/port/undef.inc"
  *
  * This file is private and must not be included by users!
  */
@@ -778,18 +778,19 @@ const upb_MiniTable google_protobuf_FileDescriptorSet_msg_init = {
   })
 };
 
-static const upb_MiniTableSub google_protobuf_FileDescriptorProto_submsgs[6] = {
+static const upb_MiniTableSub google_protobuf_FileDescriptorProto_submsgs[7] = {
   {.submsg = &google_protobuf_DescriptorProto_msg_init},
   {.submsg = &google_protobuf_EnumDescriptorProto_msg_init},
   {.submsg = &google_protobuf_ServiceDescriptorProto_msg_init},
   {.submsg = &google_protobuf_FieldDescriptorProto_msg_init},
   {.submsg = &google_protobuf_FileOptions_msg_init},
   {.submsg = &google_protobuf_SourceCodeInfo_msg_init},
+  {.subenum = &google_protobuf_Edition_enum_init},
 };
 
-static const upb_MiniTableField google_protobuf_FileDescriptorProto__fields[13] = {
-  {1, UPB_SIZE(40, 8), 1, kUpb_NoSub, 12, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
-  {2, UPB_SIZE(48, 24), 2, kUpb_NoSub, 12, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+static const upb_MiniTableField google_protobuf_FileDescriptorProto__fields[14] = {
+  {1, UPB_SIZE(44, 8), 1, kUpb_NoSub, 12, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(52, 24), 2, kUpb_NoSub, 12, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
   {3, UPB_SIZE(4, 40), 0, kUpb_NoSub, 12, (int)kUpb_FieldMode_Array | (int)kUpb_LabelFlags_IsAlternate | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {4, UPB_SIZE(8, 48), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {5, UPB_SIZE(12, 56), 0, 1, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
@@ -799,14 +800,15 @@ static const upb_MiniTableField google_protobuf_FileDescriptorProto__fields[13] 
   {9, UPB_SIZE(28, 88), 4, 5, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {10, UPB_SIZE(32, 96), 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {11, UPB_SIZE(36, 104), 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {12, UPB_SIZE(56, 112), 5, kUpb_NoSub, 12, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
-  {13, UPB_SIZE(64, 128), 6, kUpb_NoSub, 12, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {12, UPB_SIZE(60, 112), 5, kUpb_NoSub, 12, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {13, UPB_SIZE(68, 128), 6, kUpb_NoSub, 12, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {14, UPB_SIZE(40, 4), 7, 6, 14, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable google_protobuf_FileDescriptorProto_msg_init = {
   &google_protobuf_FileDescriptorProto_submsgs[0],
   &google_protobuf_FileDescriptorProto__fields[0],
-  UPB_SIZE(72, 144), 13, kUpb_ExtMode_NonExtendable, 13, UPB_FASTTABLE_MASK(120), 0,
+  UPB_SIZE(80, 144), 14, kUpb_ExtMode_NonExtendable, 14, UPB_FASTTABLE_MASK(120), 0,
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800000100000a, &upb_pss_1bt},
@@ -1386,15 +1388,20 @@ const upb_MiniTable google_protobuf_FieldOptions_msg_init = {
   })
 };
 
-static const upb_MiniTableField google_protobuf_FieldOptions_EditionDefault__fields[2] = {
-  {1, UPB_SIZE(4, 8), 1, kUpb_NoSub, 12, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
-  {2, UPB_SIZE(12, 24), 2, kUpb_NoSub, 12, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+static const upb_MiniTableSub google_protobuf_FieldOptions_EditionDefault_submsgs[1] = {
+  {.subenum = &google_protobuf_Edition_enum_init},
+};
+
+static const upb_MiniTableField google_protobuf_FieldOptions_EditionDefault__fields[3] = {
+  {1, 8, 1, kUpb_NoSub, 12, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(16, 24), 2, kUpb_NoSub, 12, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {3, 4, 3, 0, 14, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable google_protobuf_FieldOptions_EditionDefault_msg_init = {
-  NULL,
+  &google_protobuf_FieldOptions_EditionDefault_submsgs[0],
   &google_protobuf_FieldOptions_EditionDefault__fields[0],
-  UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(24, 40), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800000100000a, &upb_pss_1bt},
@@ -1739,41 +1746,47 @@ const upb_MiniTable google_protobuf_FeatureSet_msg_init = {
   24, 5, kUpb_ExtMode_Extendable, 3, UPB_FASTTABLE_MASK(255), 0,
 };
 
-static const upb_MiniTableSub google_protobuf_FeatureSetDefaults_submsgs[1] = {
+static const upb_MiniTableSub google_protobuf_FeatureSetDefaults_submsgs[3] = {
   {.submsg = &google_protobuf_FeatureSetDefaults_FeatureSetEditionDefault_msg_init},
+  {.subenum = &google_protobuf_Edition_enum_init},
+  {.subenum = &google_protobuf_Edition_enum_init},
 };
 
-static const upb_MiniTableField google_protobuf_FeatureSetDefaults__fields[3] = {
-  {1, UPB_SIZE(4, 8), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {2, UPB_SIZE(8, 16), 1, kUpb_NoSub, 12, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
-  {3, UPB_SIZE(16, 32), 2, kUpb_NoSub, 12, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+static const upb_MiniTableField google_protobuf_FeatureSetDefaults__fields[5] = {
+  {1, UPB_SIZE(4, 16), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(16, 24), 1, kUpb_NoSub, 12, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {3, UPB_SIZE(24, 40), 2, kUpb_NoSub, 12, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {4, UPB_SIZE(8, 4), 3, 1, 14, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
+  {5, UPB_SIZE(12, 8), 4, 2, 14, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable google_protobuf_FeatureSetDefaults_msg_init = {
   &google_protobuf_FeatureSetDefaults_submsgs[0],
   &google_protobuf_FeatureSetDefaults__fields[0],
-  UPB_SIZE(24, 48), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(32, 56), 5, kUpb_ExtMode_NonExtendable, 5, UPB_FASTTABLE_MASK(24), 0,
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f00000a, &upb_prm_1bt_max64b},
-    {0x0010000001000012, &upb_pss_1bt},
-    {0x002000000200001a, &upb_pss_1bt},
+    {0x001000003f00000a, &upb_prm_1bt_max64b},
+    {0x0018000001000012, &upb_pss_1bt},
+    {0x002800000200001a, &upb_pss_1bt},
   })
 };
 
-static const upb_MiniTableSub google_protobuf_FeatureSetDefaults_FeatureSetEditionDefault_submsgs[1] = {
+static const upb_MiniTableSub google_protobuf_FeatureSetDefaults_FeatureSetEditionDefault_submsgs[2] = {
   {.submsg = &google_protobuf_FeatureSet_msg_init},
+  {.subenum = &google_protobuf_Edition_enum_init},
 };
 
-static const upb_MiniTableField google_protobuf_FeatureSetDefaults_FeatureSetEditionDefault__fields[2] = {
-  {1, 8, 1, kUpb_NoSub, 12, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+static const upb_MiniTableField google_protobuf_FeatureSetDefaults_FeatureSetEditionDefault__fields[3] = {
+  {1, UPB_SIZE(12, 8), 1, kUpb_NoSub, 12, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
   {2, UPB_SIZE(4, 24), 2, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {3, UPB_SIZE(8, 4), 3, 1, 14, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable google_protobuf_FeatureSetDefaults_FeatureSetEditionDefault_msg_init = {
   &google_protobuf_FeatureSetDefaults_FeatureSetEditionDefault_submsgs[0],
   &google_protobuf_FeatureSetDefaults_FeatureSetEditionDefault__fields[0],
-  UPB_SIZE(16, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(24, 32), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800000100000a, &upb_pss_1bt},
@@ -1903,6 +1916,19 @@ static const upb_MiniTable *messages_layout[32] = {
   &google_protobuf_SourceCodeInfo_Location_msg_init,
   &google_protobuf_GeneratedCodeInfo_msg_init,
   &google_protobuf_GeneratedCodeInfo_Annotation_msg_init,
+};
+
+const upb_MiniTableEnum google_protobuf_Edition_enum_init = {
+    64,
+    4,
+    {
+        0x7,
+        0x0,
+        0x3e8,
+        0x1869d,
+        0x1869e,
+        0x1869f,
+    },
 };
 
 const upb_MiniTableEnum google_protobuf_ExtensionRangeOptions_VerificationState_enum_init = {
@@ -2040,7 +2066,8 @@ const upb_MiniTableEnum google_protobuf_MethodOptions_IdempotencyLevel_enum_init
     },
 };
 
-static const upb_MiniTableEnum *enums_layout[15] = {
+static const upb_MiniTableEnum *enums_layout[16] = {
+  &google_protobuf_Edition_enum_init,
   &google_protobuf_ExtensionRangeOptions_VerificationState_enum_init,
   &google_protobuf_FeatureSet_EnumType_enum_init,
   &google_protobuf_FeatureSet_FieldPresence_enum_init,
@@ -2063,7 +2090,7 @@ const upb_MiniTableFile google_protobuf_descriptor_proto_upb_file_layout = {
   enums_layout,
   NULL,
   32,
-  15,
+  16,
   0,
 };
 
@@ -2119,23 +2146,6 @@ static int log2ceil(uint64_t v) {
   while (v >>= 1) ret++;
   ret = pow2 ? ret : ret + 1;  // Ceiling.
   return UPB_MIN(UPB_MAXARRSIZE, ret);
-}
-
-char* upb_strdup2(const char* s, size_t len, upb_Arena* a) {
-  size_t n;
-  char* p;
-
-  /* Prevent overflow errors. */
-  if (len == SIZE_MAX) return NULL;
-  /* Always null-terminate, even if binary data; but don't rely on the input to
-   * have a null-terminating byte since it may be a raw binary buffer. */
-  n = len + 1;
-  p = upb_Arena_Malloc(a, n);
-  if (p) {
-    if (len != 0) memcpy(p, s, len);
-    p[len] = 0;
-  }
-  return p;
 }
 
 /* A type to represent the lookup key of either a strtable or an inttable. */
@@ -7405,333 +7415,6 @@ const struct upb_MiniTable _kUpb_MiniTable_Empty = {
 };
 
 
-#include <string.h>
-
-
-// Must be last.
-
-/* The upb core does not generally have a concept of default instances. However
- * for descriptor options we make an exception since the max size is known and
- * modest (<200 bytes). All types can share a default instance since it is
- * initialized to zeroes.
- *
- * We have to allocate an extra pointer for upb's internal metadata. */
-static const char opt_default_buf[_UPB_MAXOPT_SIZE + sizeof(void*)] = {0};
-const char* kUpbDefOptDefault = &opt_default_buf[sizeof(void*)];
-
-const char* _upb_DefBuilder_FullToShort(const char* fullname) {
-  const char* p;
-
-  if (fullname == NULL) {
-    return NULL;
-  } else if ((p = strrchr(fullname, '.')) == NULL) {
-    /* No '.' in the name, return the full string. */
-    return fullname;
-  } else {
-    /* Return one past the last '.'. */
-    return p + 1;
-  }
-}
-
-void _upb_DefBuilder_FailJmp(upb_DefBuilder* ctx) { UPB_LONGJMP(ctx->err, 1); }
-
-void _upb_DefBuilder_Errf(upb_DefBuilder* ctx, const char* fmt, ...) {
-  va_list argp;
-  va_start(argp, fmt);
-  upb_Status_VSetErrorFormat(ctx->status, fmt, argp);
-  va_end(argp);
-  _upb_DefBuilder_FailJmp(ctx);
-}
-
-void _upb_DefBuilder_OomErr(upb_DefBuilder* ctx) {
-  upb_Status_SetErrorMessage(ctx->status, "out of memory");
-  _upb_DefBuilder_FailJmp(ctx);
-}
-
-// Verify a relative identifier string. The loop is branchless for speed.
-static void _upb_DefBuilder_CheckIdentNotFull(upb_DefBuilder* ctx,
-                                              upb_StringView name) {
-  bool good = name.size > 0;
-
-  for (size_t i = 0; i < name.size; i++) {
-    const char c = name.data[i];
-    const char d = c | 0x20;  // force lowercase
-    const bool is_alpha = (('a' <= d) & (d <= 'z')) | (c == '_');
-    const bool is_numer = ('0' <= c) & (c <= '9') & (i != 0);
-
-    good &= is_alpha | is_numer;
-  }
-
-  if (!good) _upb_DefBuilder_CheckIdentSlow(ctx, name, false);
-}
-
-const char* _upb_DefBuilder_MakeFullName(upb_DefBuilder* ctx,
-                                         const char* prefix,
-                                         upb_StringView name) {
-  _upb_DefBuilder_CheckIdentNotFull(ctx, name);
-  if (prefix) {
-    // ret = prefix + '.' + name;
-    size_t n = strlen(prefix);
-    char* ret = _upb_DefBuilder_Alloc(ctx, n + name.size + 2);
-    strcpy(ret, prefix);
-    ret[n] = '.';
-    memcpy(&ret[n + 1], name.data, name.size);
-    ret[n + 1 + name.size] = '\0';
-    return ret;
-  } else {
-    char* ret = upb_strdup2(name.data, name.size, ctx->arena);
-    if (!ret) _upb_DefBuilder_OomErr(ctx);
-    return ret;
-  }
-}
-
-static bool remove_component(char* base, size_t* len) {
-  if (*len == 0) return false;
-
-  for (size_t i = *len - 1; i > 0; i--) {
-    if (base[i] == '.') {
-      *len = i;
-      return true;
-    }
-  }
-
-  *len = 0;
-  return true;
-}
-
-const void* _upb_DefBuilder_ResolveAny(upb_DefBuilder* ctx,
-                                       const char* from_name_dbg,
-                                       const char* base, upb_StringView sym,
-                                       upb_deftype_t* type) {
-  if (sym.size == 0) goto notfound;
-  upb_value v;
-  if (sym.data[0] == '.') {
-    /* Symbols starting with '.' are absolute, so we do a single lookup.
-     * Slice to omit the leading '.' */
-    if (!_upb_DefPool_LookupSym(ctx->symtab, sym.data + 1, sym.size - 1, &v)) {
-      goto notfound;
-    }
-  } else {
-    /* Remove components from base until we find an entry or run out. */
-    size_t baselen = base ? strlen(base) : 0;
-    char* tmp = malloc(sym.size + baselen + 1);
-    while (1) {
-      char* p = tmp;
-      if (baselen) {
-        memcpy(p, base, baselen);
-        p[baselen] = '.';
-        p += baselen + 1;
-      }
-      memcpy(p, sym.data, sym.size);
-      p += sym.size;
-      if (_upb_DefPool_LookupSym(ctx->symtab, tmp, p - tmp, &v)) {
-        break;
-      }
-      if (!remove_component(tmp, &baselen)) {
-        free(tmp);
-        goto notfound;
-      }
-    }
-    free(tmp);
-  }
-
-  *type = _upb_DefType_Type(v);
-  return _upb_DefType_Unpack(v, *type);
-
-notfound:
-  _upb_DefBuilder_Errf(ctx, "couldn't resolve name '" UPB_STRINGVIEW_FORMAT "'",
-                       UPB_STRINGVIEW_ARGS(sym));
-}
-
-const void* _upb_DefBuilder_Resolve(upb_DefBuilder* ctx,
-                                    const char* from_name_dbg, const char* base,
-                                    upb_StringView sym, upb_deftype_t type) {
-  upb_deftype_t found_type;
-  const void* ret =
-      _upb_DefBuilder_ResolveAny(ctx, from_name_dbg, base, sym, &found_type);
-  if (ret && found_type != type) {
-    _upb_DefBuilder_Errf(ctx,
-                         "type mismatch when resolving %s: couldn't find "
-                         "name " UPB_STRINGVIEW_FORMAT " with type=%d",
-                         from_name_dbg, UPB_STRINGVIEW_ARGS(sym), (int)type);
-  }
-  return ret;
-}
-
-// Per ASCII this will lower-case a letter. If the result is a letter, the
-// input was definitely a letter. If the output is not a letter, this may
-// have transformed the character unpredictably.
-static char upb_ascii_lower(char ch) { return ch | 0x20; }
-
-// isalpha() etc. from <ctype.h> are locale-dependent, which we don't want.
-static bool upb_isbetween(uint8_t c, uint8_t low, uint8_t high) {
-  return low <= c && c <= high;
-}
-
-static bool upb_isletter(char c) {
-  char lower = upb_ascii_lower(c);
-  return upb_isbetween(lower, 'a', 'z') || c == '_';
-}
-
-static bool upb_isalphanum(char c) {
-  return upb_isletter(c) || upb_isbetween(c, '0', '9');
-}
-
-static bool TryGetChar(const char** src, const char* end, char* ch) {
-  if (*src == end) return false;
-  *ch = **src;
-  *src += 1;
-  return true;
-}
-
-static int TryGetHexDigit(const char** src, const char* end) {
-  char ch;
-  if (!TryGetChar(src, end, &ch)) return -1;
-  if ('0' <= ch && ch <= '9') {
-    return ch - '0';
-  }
-  ch = upb_ascii_lower(ch);
-  if ('a' <= ch && ch <= 'f') {
-    return ch - 'a' + 0xa;
-  }
-  *src -= 1;  // Char wasn't actually a hex digit.
-  return -1;
-}
-
-static char upb_DefBuilder_ParseHexEscape(upb_DefBuilder* ctx,
-                                          const upb_FieldDef* f,
-                                          const char** src, const char* end) {
-  int hex_digit = TryGetHexDigit(src, end);
-  if (hex_digit < 0) {
-    _upb_DefBuilder_Errf(
-        ctx, "\\x must be followed by at least one hex digit (field='%s')",
-        upb_FieldDef_FullName(f));
-    return 0;
-  }
-  unsigned int ret = hex_digit;
-  while ((hex_digit = TryGetHexDigit(src, end)) >= 0) {
-    ret = (ret << 4) | hex_digit;
-  }
-  if (ret > 0xff) {
-    _upb_DefBuilder_Errf(ctx, "Value of hex escape in field %s exceeds 8 bits",
-                         upb_FieldDef_FullName(f));
-    return 0;
-  }
-  return ret;
-}
-
-static char TryGetOctalDigit(const char** src, const char* end) {
-  char ch;
-  if (!TryGetChar(src, end, &ch)) return -1;
-  if ('0' <= ch && ch <= '7') {
-    return ch - '0';
-  }
-  *src -= 1;  // Char wasn't actually an octal digit.
-  return -1;
-}
-
-static char upb_DefBuilder_ParseOctalEscape(upb_DefBuilder* ctx,
-                                            const upb_FieldDef* f,
-                                            const char** src, const char* end) {
-  char ch = 0;
-  for (int i = 0; i < 3; i++) {
-    char digit;
-    if ((digit = TryGetOctalDigit(src, end)) >= 0) {
-      ch = (ch << 3) | digit;
-    }
-  }
-  return ch;
-}
-
-char _upb_DefBuilder_ParseEscape(upb_DefBuilder* ctx, const upb_FieldDef* f,
-                                 const char** src, const char* end) {
-  char ch;
-  if (!TryGetChar(src, end, &ch)) {
-    _upb_DefBuilder_Errf(ctx, "unterminated escape sequence in field %s",
-                         upb_FieldDef_FullName(f));
-    return 0;
-  }
-  switch (ch) {
-    case 'a':
-      return '\a';
-    case 'b':
-      return '\b';
-    case 'f':
-      return '\f';
-    case 'n':
-      return '\n';
-    case 'r':
-      return '\r';
-    case 't':
-      return '\t';
-    case 'v':
-      return '\v';
-    case '\\':
-      return '\\';
-    case '\'':
-      return '\'';
-    case '\"':
-      return '\"';
-    case '?':
-      return '\?';
-    case 'x':
-    case 'X':
-      return upb_DefBuilder_ParseHexEscape(ctx, f, src, end);
-    case '0':
-    case '1':
-    case '2':
-    case '3':
-    case '4':
-    case '5':
-    case '6':
-    case '7':
-      *src -= 1;
-      return upb_DefBuilder_ParseOctalEscape(ctx, f, src, end);
-  }
-  _upb_DefBuilder_Errf(ctx, "Unknown escape sequence: \\%c", ch);
-}
-
-void _upb_DefBuilder_CheckIdentSlow(upb_DefBuilder* ctx, upb_StringView name,
-                                    bool full) {
-  const char* str = name.data;
-  const size_t len = name.size;
-  bool start = true;
-  for (size_t i = 0; i < len; i++) {
-    const char c = str[i];
-    if (c == '.') {
-      if (start || !full) {
-        _upb_DefBuilder_Errf(
-            ctx, "invalid name: unexpected '.' (" UPB_STRINGVIEW_FORMAT ")",
-            UPB_STRINGVIEW_ARGS(name));
-      }
-      start = true;
-    } else if (start) {
-      if (!upb_isletter(c)) {
-        _upb_DefBuilder_Errf(ctx,
-                             "invalid name: path components must start with a "
-                             "letter (" UPB_STRINGVIEW_FORMAT ")",
-                             UPB_STRINGVIEW_ARGS(name));
-      }
-      start = false;
-    } else if (!upb_isalphanum(c)) {
-      _upb_DefBuilder_Errf(
-          ctx,
-          "invalid name: non-alphanumeric character (" UPB_STRINGVIEW_FORMAT
-          ")",
-          UPB_STRINGVIEW_ARGS(name));
-    }
-  }
-  if (start) {
-    _upb_DefBuilder_Errf(ctx,
-                         "invalid name: empty part (" UPB_STRINGVIEW_FORMAT ")",
-                         UPB_STRINGVIEW_ARGS(name));
-  }
-
-  // We should never reach this point.
-  UPB_ASSERT(false);
-}
-
-
 
 // Must be last.
 
@@ -9612,7 +9295,7 @@ struct upb_FileDef {
   const UPB_DESC(FileOptions) * opts;
   const char* name;
   const char* package;
-  const char* edition;
+  UPB_DESC(Edition) edition;
 
   const upb_FileDef** deps;
   const int32_t* public_deps;
@@ -9649,8 +9332,8 @@ const char* upb_FileDef_Package(const upb_FileDef* f) {
   return f->package ? f->package : "";
 }
 
-const char* upb_FileDef_Edition(const upb_FileDef* f) {
-  return f->edition ? f->edition : "";
+UPB_DESC(Edition) upb_FileDef_Edition(const upb_FileDef* f) {
+  return f->edition;
 }
 
 const char* _upb_FileDef_RawPackage(const upb_FileDef* f) { return f->package; }
@@ -9815,17 +9498,8 @@ void _upb_FileDef_Create(upb_DefBuilder* ctx,
     file->package = NULL;
   }
 
-  upb_StringView edition = UPB_DESC(FileDescriptorProto_edition)(file_proto);
-
-  if (edition.size == 0) {
-    file->edition = NULL;
-  } else {
-    // TODO(b/267770604): How should we validate this?
-    file->edition = strviewdup(ctx, edition);
-    if (strlen(file->edition) != edition.size) {
-      _upb_DefBuilder_Errf(ctx, "Edition name contained embedded NULL");
-    }
-  }
+  // TODO(b/267770604): How should we validate this?
+  file->edition = UPB_DESC(FileDescriptorProto_edition_enum)(file_proto);
 
   if (UPB_DESC(FileDescriptorProto_has_syntax)(file_proto)) {
     upb_StringView syntax = UPB_DESC(FileDescriptorProto_syntax)(file_proto);
@@ -9834,6 +9508,8 @@ void _upb_FileDef_Create(upb_DefBuilder* ctx,
       file->syntax = kUpb_Syntax_Proto2;
     } else if (streql_view(syntax, "proto3")) {
       file->syntax = kUpb_Syntax_Proto3;
+    } else if (streql_view(syntax, "editions")) {
+      file->syntax = kUpb_Syntax_Editions;
     } else {
       _upb_DefBuilder_Errf(ctx, "Invalid syntax '" UPB_STRINGVIEW_FORMAT "'",
                            UPB_STRINGVIEW_ARGS(syntax));
@@ -9939,6 +9615,357 @@ void _upb_FileDef_Create(upb_DefBuilder* ctx,
         _upb_DefPool_ExtReg(ctx->symtab), file->ext_layouts, file->ext_count);
     if (!ok) _upb_DefBuilder_OomErr(ctx);
   }
+}
+
+
+#include <string.h>
+
+
+// Must be last.
+
+/* The upb core does not generally have a concept of default instances. However
+ * for descriptor options we make an exception since the max size is known and
+ * modest (<200 bytes). All types can share a default instance since it is
+ * initialized to zeroes.
+ *
+ * We have to allocate an extra pointer for upb's internal metadata. */
+static const char opt_default_buf[_UPB_MAXOPT_SIZE + sizeof(void*)] = {0};
+const char* kUpbDefOptDefault = &opt_default_buf[sizeof(void*)];
+
+const char* _upb_DefBuilder_FullToShort(const char* fullname) {
+  const char* p;
+
+  if (fullname == NULL) {
+    return NULL;
+  } else if ((p = strrchr(fullname, '.')) == NULL) {
+    /* No '.' in the name, return the full string. */
+    return fullname;
+  } else {
+    /* Return one past the last '.'. */
+    return p + 1;
+  }
+}
+
+void _upb_DefBuilder_FailJmp(upb_DefBuilder* ctx) { UPB_LONGJMP(ctx->err, 1); }
+
+void _upb_DefBuilder_Errf(upb_DefBuilder* ctx, const char* fmt, ...) {
+  va_list argp;
+  va_start(argp, fmt);
+  upb_Status_VSetErrorFormat(ctx->status, fmt, argp);
+  va_end(argp);
+  _upb_DefBuilder_FailJmp(ctx);
+}
+
+void _upb_DefBuilder_OomErr(upb_DefBuilder* ctx) {
+  upb_Status_SetErrorMessage(ctx->status, "out of memory");
+  _upb_DefBuilder_FailJmp(ctx);
+}
+
+// Verify a relative identifier string. The loop is branchless for speed.
+static void _upb_DefBuilder_CheckIdentNotFull(upb_DefBuilder* ctx,
+                                              upb_StringView name) {
+  bool good = name.size > 0;
+
+  for (size_t i = 0; i < name.size; i++) {
+    const char c = name.data[i];
+    const char d = c | 0x20;  // force lowercase
+    const bool is_alpha = (('a' <= d) & (d <= 'z')) | (c == '_');
+    const bool is_numer = ('0' <= c) & (c <= '9') & (i != 0);
+
+    good &= is_alpha | is_numer;
+  }
+
+  if (!good) _upb_DefBuilder_CheckIdentSlow(ctx, name, false);
+}
+
+const char* _upb_DefBuilder_MakeFullName(upb_DefBuilder* ctx,
+                                         const char* prefix,
+                                         upb_StringView name) {
+  _upb_DefBuilder_CheckIdentNotFull(ctx, name);
+  if (prefix) {
+    // ret = prefix + '.' + name;
+    size_t n = strlen(prefix);
+    char* ret = _upb_DefBuilder_Alloc(ctx, n + name.size + 2);
+    strcpy(ret, prefix);
+    ret[n] = '.';
+    memcpy(&ret[n + 1], name.data, name.size);
+    ret[n + 1 + name.size] = '\0';
+    return ret;
+  } else {
+    char* ret = upb_strdup2(name.data, name.size, ctx->arena);
+    if (!ret) _upb_DefBuilder_OomErr(ctx);
+    return ret;
+  }
+}
+
+static bool remove_component(char* base, size_t* len) {
+  if (*len == 0) return false;
+
+  for (size_t i = *len - 1; i > 0; i--) {
+    if (base[i] == '.') {
+      *len = i;
+      return true;
+    }
+  }
+
+  *len = 0;
+  return true;
+}
+
+const void* _upb_DefBuilder_ResolveAny(upb_DefBuilder* ctx,
+                                       const char* from_name_dbg,
+                                       const char* base, upb_StringView sym,
+                                       upb_deftype_t* type) {
+  if (sym.size == 0) goto notfound;
+  upb_value v;
+  if (sym.data[0] == '.') {
+    /* Symbols starting with '.' are absolute, so we do a single lookup.
+     * Slice to omit the leading '.' */
+    if (!_upb_DefPool_LookupSym(ctx->symtab, sym.data + 1, sym.size - 1, &v)) {
+      goto notfound;
+    }
+  } else {
+    /* Remove components from base until we find an entry or run out. */
+    size_t baselen = base ? strlen(base) : 0;
+    char* tmp = malloc(sym.size + baselen + 1);
+    while (1) {
+      char* p = tmp;
+      if (baselen) {
+        memcpy(p, base, baselen);
+        p[baselen] = '.';
+        p += baselen + 1;
+      }
+      memcpy(p, sym.data, sym.size);
+      p += sym.size;
+      if (_upb_DefPool_LookupSym(ctx->symtab, tmp, p - tmp, &v)) {
+        break;
+      }
+      if (!remove_component(tmp, &baselen)) {
+        free(tmp);
+        goto notfound;
+      }
+    }
+    free(tmp);
+  }
+
+  *type = _upb_DefType_Type(v);
+  return _upb_DefType_Unpack(v, *type);
+
+notfound:
+  _upb_DefBuilder_Errf(ctx, "couldn't resolve name '" UPB_STRINGVIEW_FORMAT "'",
+                       UPB_STRINGVIEW_ARGS(sym));
+}
+
+const void* _upb_DefBuilder_Resolve(upb_DefBuilder* ctx,
+                                    const char* from_name_dbg, const char* base,
+                                    upb_StringView sym, upb_deftype_t type) {
+  upb_deftype_t found_type;
+  const void* ret =
+      _upb_DefBuilder_ResolveAny(ctx, from_name_dbg, base, sym, &found_type);
+  if (ret && found_type != type) {
+    _upb_DefBuilder_Errf(ctx,
+                         "type mismatch when resolving %s: couldn't find "
+                         "name " UPB_STRINGVIEW_FORMAT " with type=%d",
+                         from_name_dbg, UPB_STRINGVIEW_ARGS(sym), (int)type);
+  }
+  return ret;
+}
+
+// Per ASCII this will lower-case a letter. If the result is a letter, the
+// input was definitely a letter. If the output is not a letter, this may
+// have transformed the character unpredictably.
+static char upb_ascii_lower(char ch) { return ch | 0x20; }
+
+// isalpha() etc. from <ctype.h> are locale-dependent, which we don't want.
+static bool upb_isbetween(uint8_t c, uint8_t low, uint8_t high) {
+  return low <= c && c <= high;
+}
+
+static bool upb_isletter(char c) {
+  char lower = upb_ascii_lower(c);
+  return upb_isbetween(lower, 'a', 'z') || c == '_';
+}
+
+static bool upb_isalphanum(char c) {
+  return upb_isletter(c) || upb_isbetween(c, '0', '9');
+}
+
+static bool TryGetChar(const char** src, const char* end, char* ch) {
+  if (*src == end) return false;
+  *ch = **src;
+  *src += 1;
+  return true;
+}
+
+static int TryGetHexDigit(const char** src, const char* end) {
+  char ch;
+  if (!TryGetChar(src, end, &ch)) return -1;
+  if ('0' <= ch && ch <= '9') {
+    return ch - '0';
+  }
+  ch = upb_ascii_lower(ch);
+  if ('a' <= ch && ch <= 'f') {
+    return ch - 'a' + 0xa;
+  }
+  *src -= 1;  // Char wasn't actually a hex digit.
+  return -1;
+}
+
+static char upb_DefBuilder_ParseHexEscape(upb_DefBuilder* ctx,
+                                          const upb_FieldDef* f,
+                                          const char** src, const char* end) {
+  int hex_digit = TryGetHexDigit(src, end);
+  if (hex_digit < 0) {
+    _upb_DefBuilder_Errf(
+        ctx, "\\x must be followed by at least one hex digit (field='%s')",
+        upb_FieldDef_FullName(f));
+    return 0;
+  }
+  unsigned int ret = hex_digit;
+  while ((hex_digit = TryGetHexDigit(src, end)) >= 0) {
+    ret = (ret << 4) | hex_digit;
+  }
+  if (ret > 0xff) {
+    _upb_DefBuilder_Errf(ctx, "Value of hex escape in field %s exceeds 8 bits",
+                         upb_FieldDef_FullName(f));
+    return 0;
+  }
+  return ret;
+}
+
+static char TryGetOctalDigit(const char** src, const char* end) {
+  char ch;
+  if (!TryGetChar(src, end, &ch)) return -1;
+  if ('0' <= ch && ch <= '7') {
+    return ch - '0';
+  }
+  *src -= 1;  // Char wasn't actually an octal digit.
+  return -1;
+}
+
+static char upb_DefBuilder_ParseOctalEscape(upb_DefBuilder* ctx,
+                                            const upb_FieldDef* f,
+                                            const char** src, const char* end) {
+  char ch = 0;
+  for (int i = 0; i < 3; i++) {
+    char digit;
+    if ((digit = TryGetOctalDigit(src, end)) >= 0) {
+      ch = (ch << 3) | digit;
+    }
+  }
+  return ch;
+}
+
+char _upb_DefBuilder_ParseEscape(upb_DefBuilder* ctx, const upb_FieldDef* f,
+                                 const char** src, const char* end) {
+  char ch;
+  if (!TryGetChar(src, end, &ch)) {
+    _upb_DefBuilder_Errf(ctx, "unterminated escape sequence in field %s",
+                         upb_FieldDef_FullName(f));
+    return 0;
+  }
+  switch (ch) {
+    case 'a':
+      return '\a';
+    case 'b':
+      return '\b';
+    case 'f':
+      return '\f';
+    case 'n':
+      return '\n';
+    case 'r':
+      return '\r';
+    case 't':
+      return '\t';
+    case 'v':
+      return '\v';
+    case '\\':
+      return '\\';
+    case '\'':
+      return '\'';
+    case '\"':
+      return '\"';
+    case '?':
+      return '\?';
+    case 'x':
+    case 'X':
+      return upb_DefBuilder_ParseHexEscape(ctx, f, src, end);
+    case '0':
+    case '1':
+    case '2':
+    case '3':
+    case '4':
+    case '5':
+    case '6':
+    case '7':
+      *src -= 1;
+      return upb_DefBuilder_ParseOctalEscape(ctx, f, src, end);
+  }
+  _upb_DefBuilder_Errf(ctx, "Unknown escape sequence: \\%c", ch);
+}
+
+void _upb_DefBuilder_CheckIdentSlow(upb_DefBuilder* ctx, upb_StringView name,
+                                    bool full) {
+  const char* str = name.data;
+  const size_t len = name.size;
+  bool start = true;
+  for (size_t i = 0; i < len; i++) {
+    const char c = str[i];
+    if (c == '.') {
+      if (start || !full) {
+        _upb_DefBuilder_Errf(
+            ctx, "invalid name: unexpected '.' (" UPB_STRINGVIEW_FORMAT ")",
+            UPB_STRINGVIEW_ARGS(name));
+      }
+      start = true;
+    } else if (start) {
+      if (!upb_isletter(c)) {
+        _upb_DefBuilder_Errf(ctx,
+                             "invalid name: path components must start with a "
+                             "letter (" UPB_STRINGVIEW_FORMAT ")",
+                             UPB_STRINGVIEW_ARGS(name));
+      }
+      start = false;
+    } else if (!upb_isalphanum(c)) {
+      _upb_DefBuilder_Errf(
+          ctx,
+          "invalid name: non-alphanumeric character (" UPB_STRINGVIEW_FORMAT
+          ")",
+          UPB_STRINGVIEW_ARGS(name));
+    }
+  }
+  if (start) {
+    _upb_DefBuilder_Errf(ctx,
+                         "invalid name: empty part (" UPB_STRINGVIEW_FORMAT ")",
+                         UPB_STRINGVIEW_ARGS(name));
+  }
+
+  // We should never reach this point.
+  UPB_ASSERT(false);
+}
+
+
+#include <string.h>
+
+
+// Must be last.
+
+char* upb_strdup2(const char* s, size_t len, upb_Arena* a) {
+  size_t n;
+  char* p;
+
+  // Prevent overflow errors.
+  if (len == SIZE_MAX) return NULL;
+
+  // Always null-terminate, even if binary data; but don't rely on the input to
+  // have a null-terminating byte since it may be a raw binary buffer.
+  n = len + 1;
+  p = upb_Arena_Malloc(a, n);
+  if (p) {
+    if (len != 0) memcpy(p, s, len);
+    p[len] = 0;
+  }
+  return p;
 }
 
 
@@ -11249,6 +11276,10 @@ upb_ServiceDef* _upb_ServiceDefs_New(
 }
 
 
+#include <assert.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 #include <string.h>
 
 
@@ -11299,13 +11330,13 @@ static const char* _upb_Decoder_DecodeMessage(upb_Decoder* d, const char* ptr,
 
 UPB_NORETURN static void* _upb_Decoder_ErrorJmp(upb_Decoder* d,
                                                 upb_DecodeStatus status) {
-  assert(status != kUpb_DecodeStatus_Ok);
+  UPB_ASSERT(status != kUpb_DecodeStatus_Ok);
   d->status = status;
   UPB_LONGJMP(d->err, 1);
 }
 
 const char* _upb_FastDecoder_ErrorJmp(upb_Decoder* d, int status) {
-  assert(status != kUpb_DecodeStatus_Ok);
+  UPB_ASSERT(status != kUpb_DecodeStatus_Ok);
   d->status = status;
   UPB_LONGJMP(d->err, 1);
   return NULL;
@@ -11952,7 +11983,7 @@ UPB_NOINLINE
 const char* _upb_Decoder_CheckRequired(upb_Decoder* d, const char* ptr,
                                        const upb_Message* msg,
                                        const upb_MiniTable* l) {
-  assert(l->required_count);
+  UPB_ASSERT(l->required_count);
   if (UPB_LIKELY((d->options & kUpb_DecodeOption_CheckRequired) == 0)) {
     return ptr;
   }
@@ -12218,10 +12249,10 @@ static void _upb_Decoder_CheckUnlinked(upb_Decoder* d, const upb_MiniTable* mt,
     // All other members of the oneof must be message fields that are also
     // unlinked.
     do {
-      assert(upb_MiniTableField_CType(oneof) == kUpb_CType_Message);
+      UPB_ASSERT(upb_MiniTableField_CType(oneof) == kUpb_CType_Message);
       const upb_MiniTableSub* oneof_sub =
           &mt->subs[oneof->UPB_PRIVATE(submsg_index)];
-      assert(!oneof_sub);
+      UPB_ASSERT(!oneof_sub);
     } while (upb_MiniTable_NextOneofField(mt, &oneof));
   }
 #endif  // NDEBUG
@@ -13573,6 +13604,9 @@ TAGBYTES(r)
 // We encode backwards, to avoid pre-computing lengths (one-pass encode).
 
 
+#include <setjmp.h>
+#include <stdbool.h>
+#include <stdint.h>
 #include <string.h>
 
 
