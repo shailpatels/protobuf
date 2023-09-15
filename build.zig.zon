@@ -1,0 +1,11 @@
+.{
+    .name = "protobuf",
+    .version = "0.0.0",
+
+    .dependencies = .{
+        .abseil_cpp= .{
+            .url = "https://github.com/shailpatels/abseil-cpp/archive/refs/tags/20230802.0-fix2.tar.gz",
+            .hash = "12208ab9caf10356590c4ccdd958bdd0f33ab720ea75b8ecbd2e24c8912a27a28b36",
+        },
+    },
+}
