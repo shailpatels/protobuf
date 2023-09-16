@@ -61,7 +61,7 @@ pub fn build(b: *std.Build) void {
     lib_protoc.linkLibrary(lib_proto);
 
     const protoc = b.addExecutable(.{
-        .name = "protoc",
+        .name = "protobufcompiler", //same name with libprotoc causes conflict
         .target = target,
         .optimize = optimize,
     });
